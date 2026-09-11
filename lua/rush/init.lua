@@ -1,3 +1,5 @@
+local log = require("rush/log")
+
 local M = {}
 
 local state = "init"
@@ -53,21 +55,8 @@ local function rush(count)
 
 	return 1
 end
-
-function M.setup(opts)
-	opts = opts or {}
-
-	local rush_steps = opts.rush_steps or default_rush_steps
-	rush_levels = remake_rush_table(rush_steps)
-end
-
-local function on_key(key, typed)
-	if #typed == 0 then
-		return
-	end
-
-	-- print("on_key", tostring(key), vim.inspect(typed))
-
+local function key_state(typed, is_onkey)
+	local old_state = state
 	if state == "init" then
 		if typed == "g" then
 			state = "g"
@@ -93,25 +82,93 @@ local function on_key(key, typed)
 			state = "init"
 		end
 	end
+	log.probe(
+		"%s (%s) %s -> %s %s [%d %s]",
+		is_onkey and "on_key" or "keymap",
+		vim.inspect(typed),
+		old_state,
+		state,
+		rep_key,
+		rep_count,
+		rep_command
+	)
+end
+
+local function new_motion(motion, n_rep)
+	log.probe(
+		"%s = %s, %s %s [%d %s]",
+		n_rep and "new_motion" or "through",
+		motion,
+		state,
+		rep_key,
+		rep_count,
+		rep_command
+	)
+	-- return motion
+	return "2" .. rep_command
+end
+
+local keymap_key = nil
+local function key_flow(typed, is_onkey)
+	if is_onkey and keymap_key == typed then
+		keymap_key = nil
+		return
+	end
+	key_state(typed, is_onkey)
+end
+
+local last_key = nil
+local last_count = nil
+
+local function on_key(key, typed)
+	if #typed == 0 then
+		-- log.probe("on_key (%s %s)", vim.inspect(key), vim.inspect(typed))
+		return
+	end
+	-- key_flow(typed, true)
+	last_key = typed
+end
+
+function M.setup(opts)
+	opts = opts or {}
+	local rush_steps = opts.rush_steps or default_rush_steps
+	rush_levels = remake_rush_table(rush_steps)
 end
 
 vim.on_key(on_key)
 
 for _, motion in ipairs({ "h", "j", "k", "l" }) do
 	vim.keymap.set("n", motion, function()
-		if state ~= "repeat" or rep_key ~= motion then
+		if motion == last_key then
+			log.probe("new motion " .. last_count .. motion)
+			return last_count .. motion
+		else
+			last_count = vim.v.count1
+			log.probe(last_key)
+			log.probe(last_count)
 			return motion
 		end
+	end, {
+		expr = true,
+	})
+end
 
-		local n_rep = rush(rep_count)
-
-		print(rep_count)
-
-		if n_rep == 1 then
-			return rep_command
+for _, motion in ipairs({}) do
+	vim.keymap.set("n", motion, function()
+		log.probe("NG" .. motion)
+		keymap_key = motion
+		key_flow(motion)
+		if true then
+			return motion
 		end
-
-		return n_rep .. rep_command
+		if state ~= "repeat" or rep_key ~= motion then
+			return new_motion(motion)
+		end
+		local n_rep = rush(rep_count)
+		if n_rep == 1 then
+			return new_motion(rep_command, n_rep)
+		end
+		return new_motion(n_rep .. rep_command, n_rep)
 	end, {
 		expr = true,
 	})
