@@ -2,178 +2,165 @@ local log = require("rush/log")
 
 local M = {}
 
-local state = "init"
-local rep_key = nil
-local rep_command = nil
-local rep_count = 0
-
--- ユーザー設定:
--- { 回数, rush倍率 }
---
--- 例:
--- { 3, 2 } = 3回分をrush=2で移動
--- { 3, 4 } = 次の3回分をrush=4で移動
--- { 3, 8 } = 次の3回分をrush=8で移動
-local default_rush_steps = {
-	{ 3, 2 },
-	{ 3, 4 },
-	{ 3, 8 },
+---@enum State
+local STATE = { START = "start", CLICK = "click", TAP = "tap", HOLD = "hold" }
+---@enum Event
+local EVENT = {
+	CLICK = "click",
+	TAP = "tap",
+	HOLD_START = "hold_start",
+	HOLD_REPEAT = "hold_repeat",
 }
 
-local rush_levels = {}
+local state = STATE.START
+local prev_key = ""
+local prev_time = 0
+local first_count = 0
+local tap_count = 0
+local interval = { rep = 95, hold1 = 490, hold2 = 510, tap = 1000 }
+local key_set = {
+	"h",
+	"j",
+	"k",
+	"l",
+	"w",
+	"b",
+	"e",
+	"W",
+	"B",
+	"E",
+}
+local RUSH_VIM_COUNT = -1
+local rush_count = { RUSH_VIM_COUNT, 5, 10, 20 }
 
-local function remake_rush_table(rush_steps)
-	local result = {}
-	local count = 0
-	local rush = 1
-
-	for _, step in ipairs(rush_steps) do
-		count = count + step[1]
-
-		table.insert(result, {
-			count = count,
-			rush = rush,
-		})
-
-		rush = step[2]
+---@param typed string
+---@param delta_t number
+---@return Event
+local function get_event(typed, delta_t)
+	if prev_key ~= typed then
+		return EVENT.CLICK
+	elseif delta_t <= interval.rep then
+		return EVENT.HOLD_REPEAT
+	elseif interval.hold1 <= delta_t and delta_t <= interval.hold2 then
+		return EVENT.HOLD_START
+	elseif delta_t <= interval.tap then
+		return EVENT.TAP
+	else
+		return EVENT.CLICK
 	end
-
-	table.insert(result, {
-		count = math.huge,
-		rush = rush,
-	})
-
-	return result
 end
 
-local function rush(count)
-	for _, v in ipairs(rush_levels) do
-		if count <= v.count then
-			return v.rush
-		end
-	end
+---@param state State
+local function state_exit(state) end
 
-	return 1
+---@param state State
+local function state_enter(state)
+	if state == STATE.CLICK then
+		first_count = vim.v.count
+		tap_count = 1
+	elseif state == STATE.TAP then
+		tap_count = tap_count + 1
+	end
 end
-local function key_state(typed, is_onkey)
-	local old_state = state
-	if state == "init" then
-		if typed == "g" then
-			state = "g"
+
+---@param new_state State
+local function transition(new_state)
+	state_exit(state)
+	state = new_state
+	state_enter(state)
+end
+
+---@return string
+local function get_count()
+	if state ~= STATE.HOLD then
+		return ""
+	end
+	local count = rush_count[tap_count] or rush_count[#rush_count]
+	if count == 0 then
+		return ""
+	elseif count == RUSH_VIM_COUNT then
+		if first_count == 0 then
+			return ""
 		else
-			state = "repeat"
-			rep_key = typed
-			rep_command = typed
-			rep_count = 2
-		end
-	elseif state == "g" then
-		if typed == "j" or typed == "k" then
-			state = "repeat"
-			rep_key = typed
-			rep_command = "g" .. typed
-			rep_count = 2
-		else
-			state = "init"
-		end
-	elseif state == "repeat" then
-		if typed == rep_key then
-			rep_count = rep_count + 1
-		else
-			state = "init"
+			return tostring(first_count)
 		end
 	end
-	log.probe(
-		"%s (%s) %s -> %s %s [%d %s]",
-		is_onkey and "on_key" or "keymap",
-		vim.inspect(typed),
-		old_state,
-		state,
-		rep_key,
-		rep_count,
-		rep_command
-	)
+	return tostring(count)
 end
 
-local function new_motion(motion, n_rep)
-	log.probe(
-		"%s = %s, %s %s [%d %s]",
-		n_rep and "new_motion" or "through",
-		motion,
-		state,
-		rep_key,
-		rep_count,
-		rep_command
-	)
-	-- return motion
-	return "2" .. rep_command
+---@return string
+local function get_new_motion()
+	return get_count() .. prev_key
 end
 
-local keymap_key = nil
-local function key_flow(typed, is_onkey)
-	if is_onkey and keymap_key == typed then
-		keymap_key = nil
-		return
+---@param event Event
+local function process_event(event)
+	if state == STATE.START then
+		transition(STATE.CLICK)
+	elseif state == STATE.CLICK then
+		if event == EVENT.CLICK then
+			transition(STATE.CLICK)
+		elseif event == EVENT.TAP then
+			transition(STATE.TAP)
+		elseif event == EVENT.HOLD_START then
+			transition(STATE.HOLD)
+		end
+	elseif state == STATE.TAP then
+		if event == EVENT.TAP then
+			transition(STATE.TAP)
+		elseif event == EVENT.HOLD_START then
+			transition(STATE.HOLD)
+		else
+			transition(STATE.CLICK)
+		end
+	elseif state == STATE.HOLD then
+		if event ~= EVENT.HOLD_REPEAT then
+			transition(STATE.CLICK)
+		end
 	end
-	key_state(typed, is_onkey)
 end
 
-local last_key = nil
-local last_count = nil
+---@param typed string
+---@return number
+local function key_in(typed)
+	local now = vim.loop.hrtime()
+	local delta_t = (now - prev_time) / 1e6
+	local event = get_event(typed, delta_t)
+	process_event(event)
+	prev_key = typed
+	prev_time = now
+	return delta_t
+end
 
+---@param key string
+---@param typed string
 local function on_key(key, typed)
 	if #typed == 0 then
-		-- log.probe("on_key (%s %s)", vim.inspect(key), vim.inspect(typed))
 		return
 	end
-	-- key_flow(typed, true)
-	last_key = typed
+	if not vim.tbl_contains(key_set, typed) then
+		key_in(typed)
+	end
 end
 
+---@param opts {[string]:any}
 function M.setup(opts)
 	opts = opts or {}
-	local rush_steps = opts.rush_steps or default_rush_steps
-	rush_levels = remake_rush_table(rush_steps)
+	vim.on_key(on_key)
+	for _, motion in ipairs(key_set) do
+		vim.keymap.set({ "n", "x" }, motion, function()
+			local delta_t = key_in(motion)
+			log.probe(
+				"%s\t: %d, %d\t%s [%d]",
+				state,
+				first_count,
+				tap_count,
+				get_new_motion(),
+				delta_t
+			)
+			return get_new_motion()
+		end, { expr = true })
+	end
 end
-
-vim.on_key(on_key)
-
-for _, motion in ipairs({ "h", "j", "k", "l" }) do
-	vim.keymap.set("n", motion, function()
-		if motion == last_key then
-			log.probe("new motion " .. last_count .. motion)
-			return last_count .. motion
-		else
-			last_count = vim.v.count1
-			log.probe(last_key)
-			log.probe(last_count)
-			return motion
-		end
-	end, {
-		expr = true,
-	})
-end
-
-for _, motion in ipairs({}) do
-	vim.keymap.set("n", motion, function()
-		log.probe("NG" .. motion)
-		keymap_key = motion
-		key_flow(motion)
-		if true then
-			return motion
-		end
-		if state ~= "repeat" or rep_key ~= motion then
-			return new_motion(motion)
-		end
-		local n_rep = rush(rep_count)
-		if n_rep == 1 then
-			return new_motion(rep_command, n_rep)
-		end
-		return new_motion(n_rep .. rep_command, n_rep)
-	end, {
-		expr = true,
-	})
-end
-
-M.setup()
 
 return M
