@@ -252,7 +252,7 @@ function M.setup(opts)
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
 			local delta_t = key_in(motion)
-			log.probe(
+			log.debug(
 				"%s\t: %d, %d\t%s [%d]",
 				state,
 				first_count,
