@@ -21,8 +21,11 @@ local buf
 local win
 
 local measurements = {}
-local prev_key = nil
-local prev_time = nil
+local prev_key = ""
+local prev_time = 0
+local first_repeat = true
+local hold_intervals = {}
+local repeat_intervals = {}
 
 --------------------------------------------------
 -- window
@@ -71,92 +74,15 @@ local function create_window()
 end
 
 --------------------------------------------------
--- diagnosis
---------------------------------------------------
-
----@param values number[]
----@return number[] small
----@return number[] large
-local function split_values(values)
-	local sorted = vim.deepcopy(values)
-	table.sort(sorted)
-
-	if #sorted < 2 then
-		return sorted, {}
-	end
-
-	local split_index = 1
-	local max_gap = 0
-
-	for i = 1, #sorted - 1 do
-		local gap = sorted[i + 1] - sorted[i]
-
-		if gap > max_gap then
-			max_gap = gap
-			split_index = i
-		end
-	end
-
-	local small = {}
-	local large = {}
-
-	for i, value in ipairs(sorted) do
-		if i <= split_index then
-			table.insert(small, value)
-		else
-			table.insert(large, value)
-		end
-	end
-
-	return small, large
-end
-
----@return table?
-local function analyze()
-	if #measurements < 2 then
-		return nil
-	end
-
-	local small, large = split_values(measurements)
-
-	if #small == 0 or #large == 0 then
-		return nil
-	end
-
-	return {
-		small = small,
-		large = large,
-		rep = small[#small],
-		hold1 = large[1],
-		hold2 = large[#large],
-	}
-end
-
---------------------------------------------------
 -- display
 --------------------------------------------------
 
-local function show_measurements()
-	local lines = {
-		"Rush diagnosis",
-		"",
-		"Press and hold a key several times.",
-		"Release the key between each measurement.",
-		"",
-		"Press <Esc> to finish.",
-		"",
-		"Measurements:",
-	}
-
-	for _, value in ipairs(measurements) do
-		table.insert(lines, string.format("  %d ms", value))
-	end
-
-	set_lines(lines)
-end
-
 local function show_result()
-	local result = analyze()
+	local result = {
+		rep = math.max(unpack(repeat_intervals)),
+		hold1 = math.min(unpack(hold_intervals)),
+		hold2 = math.max(unpack(hold_intervals)),
+	}
 
 	if not result then
 		set_lines({
@@ -175,7 +101,6 @@ local function show_result()
 		"Detected intervals:",
 		"",
 		"  repeat",
-		string.format("    min: %d ms", result.small[1]),
 		string.format("    max: %d ms", result.rep),
 		"",
 		"  hold",
@@ -194,29 +119,26 @@ end
 -- input
 --------------------------------------------------
 
---------------------------------------------------
--- input
---------------------------------------------------
-
----@param key string
 local function key_in(key)
 	local now = vim.loop.hrtime()
 
-	-- 新しい測定の開始
-	if prev_key ~= key then
+	if prev_key ~= key or prev_time == nil then
 		prev_key = key
 		prev_time = now
+		first_repeat = true
 		return
 	end
 
-	-- 同じキーのリピート
-	local delta_t = (now - prev_time) / 1e6
+	local delta_t = math.floor((now - prev_time) / 1e6 + 0.5)
 
-	table.insert(measurements, math.floor(delta_t + 0.5))
+	if first_repeat then
+		table.insert(hold_intervals, delta_t)
+		first_repeat = false
+	else
+		table.insert(repeat_intervals, delta_t)
+	end
 
 	prev_time = now
-
-	vim.schedule(show_measurements)
 end
 
 --------------------------------------------------
@@ -256,7 +178,16 @@ function M.start()
 		"Rush diagnosis",
 		"",
 		"Press and hold a key several times.",
-		"Release the key between each measurement.",
+		"",
+		"Use a different key for each measurement.",
+		"For example:",
+		"",
+		"  hold j",
+		"  hold k",
+		"  hold j",
+		"  hold k",
+		"",
+		"Release the key between measurements.",
 		"",
 		"Press <Esc> to finish.",
 	})
@@ -264,7 +195,7 @@ function M.start()
 	for _, key in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, key, function()
 			key_in(key)
-			return key
+			return ""
 		end, {
 			expr = true,
 			silent = true,
