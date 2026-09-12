@@ -77,7 +77,9 @@ local tap_count = 0
 -- config
 --------------------------------------------------
 
----@param values any[]
+---@alias RushCountValue "vim"|"none"|integer
+
+---@param values RushCountValue[]
 ---@return any[]
 local function make_rush_count(values)
 	if type(values) ~= "table" then
@@ -230,9 +232,8 @@ local function key_in(typed)
 	return delta_t
 end
 
----@param key string
 ---@param typed string
-local function on_key(key, typed)
+local function on_key(_, typed)
 	if #typed == 0 then
 		return
 	end
@@ -248,7 +249,6 @@ end
 ---@param opts? table
 function M.setup(opts)
 	setup_config(opts or {})
-	vim.on_key(on_key)
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
 			local delta_t = key_in(motion)
@@ -279,5 +279,7 @@ function M.setup(opts)
 		end,
 	})
 end
+
+vim.on_key(on_key)
 
 return M
