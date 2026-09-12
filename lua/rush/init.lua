@@ -2,8 +2,18 @@ local log = require("rush/log")
 
 local M = {}
 
+--------------------------------------------------
+-- constants
+--------------------------------------------------
+
 ---@enum State
-local STATE = { START = "start", CLICK = "click", TAP = "tap", HOLD = "hold" }
+local STATE = {
+	START = "start",
+	CLICK = "click",
+	TAP = "tap",
+	HOLD = "hold",
+}
+
 ---@enum Event
 local EVENT = {
 	CLICK = "click",
@@ -12,12 +22,12 @@ local EVENT = {
 	HOLD_REPEAT = "hold_repeat",
 }
 
-local state = STATE.START
-local prev_key = ""
-local prev_time = 0
-local first_count = 0
-local tap_count = 0
-local interval = { rep = 95, hold1 = 490, hold2 = 510, tap = 1000 }
+local RUSH_VIM_COUNT = -1
+
+--------------------------------------------------
+-- default config
+--------------------------------------------------
+
 local key_set = {
 	"h",
 	"j",
@@ -30,8 +40,66 @@ local key_set = {
 	"B",
 	"E",
 }
-local RUSH_VIM_COUNT = -1
-local rush_count = { RUSH_VIM_COUNT, 5, 10, 20 }
+
+local default_config = {
+	interval = {
+		rep = 95,
+		hold1 = 490,
+		hold2 = 510,
+		tap = 1000,
+	},
+	rush_count = {
+		"vim",
+		5,
+		10,
+		20,
+		40,
+	},
+}
+
+--------------------------------------------------
+-- runtime state
+--------------------------------------------------
+
+local config
+local interval
+local rush_count
+
+local state = STATE.START
+local prev_key = ""
+local prev_time = 0
+local first_count = 0
+local tap_count = 0
+
+--------------------------------------------------
+-- config
+--------------------------------------------------
+
+---@param values any[]
+---@return any[]
+local function make_rush_count(values)
+	local result = {}
+	for _, value in ipairs(values) do
+		if value == "vim" then
+			table.insert(result, RUSH_VIM_COUNT)
+		else
+			table.insert(result, value)
+		end
+	end
+	return result
+end
+
+---@param opts table
+local function setup_config(opts)
+	config =
+		vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
+	interval = config.interval
+	rush_count = make_rush_count(config.rush_count)
+end
+
+--------------------------------------------------
+-- event
+--------------------------------------------------
 
 ---@param typed string
 ---@param delta_t number
@@ -50,15 +118,19 @@ local function get_event(typed, delta_t)
 	end
 end
 
----@param state State
-local function state_exit(state) end
+--------------------------------------------------
+-- state
+--------------------------------------------------
 
----@param state State
-local function state_enter(state)
-	if state == STATE.CLICK then
+---@param old_state State
+local function state_exit(old_state) end
+
+---@param new_state State
+local function state_enter(new_state)
+	if new_state == STATE.CLICK then
 		first_count = vim.v.count
 		tap_count = 1
-	elseif state == STATE.TAP then
+	elseif new_state == STATE.TAP then
 		tap_count = tap_count + 1
 	end
 end
@@ -69,6 +141,10 @@ local function transition(new_state)
 	state = new_state
 	state_enter(state)
 end
+
+--------------------------------------------------
+-- motion
+--------------------------------------------------
 
 ---@return string
 local function get_count()
@@ -92,6 +168,10 @@ end
 local function get_new_motion()
 	return get_count() .. prev_key
 end
+
+--------------------------------------------------
+-- event processing
+--------------------------------------------------
 
 ---@param event Event
 local function process_event(event)
@@ -120,6 +200,10 @@ local function process_event(event)
 	end
 end
 
+--------------------------------------------------
+-- input
+--------------------------------------------------
+
 ---@param typed string
 ---@return number
 local function key_in(typed)
@@ -143,9 +227,13 @@ local function on_key(key, typed)
 	end
 end
 
----@param opts {[string]:any}
+--------------------------------------------------
+-- setup
+--------------------------------------------------
+
+---@param opts? table
 function M.setup(opts)
-	opts = opts or {}
+	setup_config(opts or {})
 	vim.on_key(on_key)
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
