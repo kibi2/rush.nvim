@@ -3,31 +3,39 @@ local api = vim.api
 local M = {}
 
 --------------------------------------------------
+-- config
+--------------------------------------------------
+
+local key_set = {
+	"h",
+	"j",
+	"k",
+	"l",
+}
+
+--------------------------------------------------
 -- state
 --------------------------------------------------
 
 local buf
 local win
+
 local measurements = {}
-local timer
+local prev_key = nil
+local prev_time = nil
 
 --------------------------------------------------
 -- window
 --------------------------------------------------
 
-local function close()
-	if timer then
-		timer:stop()
-		timer:close()
-		timer = nil
+local function set_lines(lines)
+	if not buf or not api.nvim_buf_is_valid(buf) then
+		return
 	end
 
-	if win and api.nvim_win_is_valid(win) then
-		api.nvim_win_close(win, true)
-	end
-
-	win = nil
-	buf = nil
+	vim.bo[buf].modifiable = true
+	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
 end
 
 local function create_window()
@@ -39,7 +47,7 @@ local function create_window()
 	vim.bo[buf].modifiable = false
 
 	local width = 60
-	local height = 15
+	local height = 20
 
 	local ui = api.nvim_list_uis()[1]
 
@@ -56,61 +64,26 @@ local function create_window()
 		border = "rounded",
 	})
 
-	vim.wo[win].cursorline = false
 	vim.wo[win].number = false
+	vim.wo[win].relativenumber = false
 	vim.wo[win].signcolumn = "no"
 	vim.wo[win].wrap = false
 end
 
 --------------------------------------------------
--- display
---------------------------------------------------
-
-local function set_lines(lines)
-	if not buf or not api.nvim_buf_is_valid(buf) then
-		return
-	end
-
-	vim.bo[buf].modifiable = true
-
-	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-
-	vim.bo[buf].modifiable = false
-end
-
-local function show_measurement()
-	local lines = {
-		"Rush diagnosis",
-		"",
-		"Press and hold a key several times.",
-		"Release the key between each measurement.",
-		"",
-		"Press <Esc> to finish.",
-		"",
-		"Measurements:",
-	}
-
-	for _, value in ipairs(measurements) do
-		table.insert(lines, string.format("  %d ms", value))
-	end
-
-	set_lines(lines)
-end
-
---------------------------------------------------
--- analysis
+-- diagnosis
 --------------------------------------------------
 
 ---@param values number[]
 ---@return number[] small
 ---@return number[] large
 local function split_values(values)
-	if #values < 2 then
-		return values, {}
-	end
-
 	local sorted = vim.deepcopy(values)
 	table.sort(sorted)
+
+	if #sorted < 2 then
+		return sorted, {}
+	end
 
 	local split_index = 1
 	local max_gap = 0
@@ -138,30 +111,52 @@ local function split_values(values)
 	return small, large
 end
 
----@param values number[]
 ---@return table?
-local function diagnosis(values)
-	if #values < 2 then
+local function analyze()
+	if #measurements < 2 then
 		return nil
 	end
 
-	local small, large = split_values(values)
+	local small, large = split_values(measurements)
 
 	if #small == 0 or #large == 0 then
 		return nil
 	end
 
 	return {
+		small = small,
+		large = large,
 		rep = small[#small],
 		hold1 = large[1],
 		hold2 = large[#large],
-		small = small,
-		large = large,
 	}
 end
 
+--------------------------------------------------
+-- display
+--------------------------------------------------
+
+local function show_measurements()
+	local lines = {
+		"Rush diagnosis",
+		"",
+		"Press and hold a key several times.",
+		"Release the key between each measurement.",
+		"",
+		"Press <Esc> to finish.",
+		"",
+		"Measurements:",
+	}
+
+	for _, value in ipairs(measurements) do
+		table.insert(lines, string.format("  %d ms", value))
+	end
+
+	set_lines(lines)
+end
+
 local function show_result()
-	local result = diagnosis(measurements)
+	local result = analyze()
 
 	if not result then
 		set_lines({
@@ -196,31 +191,51 @@ local function show_result()
 end
 
 --------------------------------------------------
--- measurement
+-- input
 --------------------------------------------------
 
-local last_time = nil
+--------------------------------------------------
+-- input
+--------------------------------------------------
 
-local function on_key(key, typed)
-	if typed == "<Esc>" then
-		close()
-		return
-	end
-
-	if #typed == 0 then
-		return
-	end
-
+---@param key string
+local function key_in(key)
 	local now = vim.loop.hrtime()
 
-	if last_time then
-		local delta_t = (now - last_time) / 1e6
-		table.insert(measurements, math.floor(delta_t + 0.5))
-
-		show_measurement()
+	-- 新しい測定の開始
+	if prev_key ~= key then
+		prev_key = key
+		prev_time = now
+		return
 	end
 
-	last_time = now
+	-- 同じキーのリピート
+	local delta_t = (now - prev_time) / 1e6
+
+	table.insert(measurements, math.floor(delta_t + 0.5))
+
+	prev_time = now
+
+	vim.schedule(show_measurements)
+end
+
+--------------------------------------------------
+-- cleanup
+--------------------------------------------------
+
+local function cleanup()
+	for _, key in ipairs(key_set) do
+		pcall(vim.keymap.del, "n", key)
+		pcall(vim.keymap.del, "x", key)
+	end
+
+	if win and api.nvim_win_is_valid(win) then
+		api.nvim_win_close(win, true)
+	end
+
+	win = nil
+	buf = nil
+	prev_time = nil
 end
 
 --------------------------------------------------
@@ -233,7 +248,7 @@ function M.start()
 	end
 
 	measurements = {}
-	last_time = nil
+	prev_time = nil
 
 	create_window()
 
@@ -246,7 +261,35 @@ function M.start()
 		"Press <Esc> to finish.",
 	})
 
-	vim.on_key(on_key)
+	for _, key in ipairs(key_set) do
+		vim.keymap.set({ "n", "x" }, key, function()
+			key_in(key)
+			return key
+		end, {
+			expr = true,
+			silent = true,
+		})
+	end
+
+	local phase = "measure"
+
+	vim.keymap.set({ "n", "x" }, "<Esc>", function()
+		if phase == "measure" then
+			phase = "result"
+
+			vim.schedule(function()
+				show_result()
+			end)
+
+			return ""
+		end
+
+		vim.schedule(cleanup)
+		return ""
+	end, {
+		expr = true,
+		silent = true,
+	})
 end
 
 return M

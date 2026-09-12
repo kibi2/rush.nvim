@@ -1,4 +1,5 @@
-local log = require("rush/log")
+local log = require("rush.log")
+local diagnosis = require("rush.diagnosis")
 
 local M = {}
 
@@ -262,6 +263,21 @@ function M.setup(opts)
 			return get_new_motion()
 		end, { expr = true })
 	end
+	vim.api.nvim_create_user_command("Rush", function(opts)
+		if opts.args == "diagnosis" then
+			diagnosis.start()
+		else
+			vim.notify(
+				"Unknown Rush command: " .. opts.args,
+				vim.log.levels.ERROR
+			)
+		end
+	end, {
+		nargs = 1,
+		complete = function()
+			return { "diagnosis" }
+		end,
+	})
 end
 
 return M
