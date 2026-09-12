@@ -23,6 +23,7 @@ local EVENT = {
 }
 
 local RUSH_VIM_COUNT = -1
+local RUSH_NONE = 0
 
 --------------------------------------------------
 -- default config
@@ -78,12 +79,24 @@ local tap_count = 0
 ---@param values any[]
 ---@return any[]
 local function make_rush_count(values)
+	if type(values) ~= "table" then
+		error("rush_count must be a table")
+	end
+
 	local result = {}
 	for _, value in ipairs(values) do
 		if value == "vim" then
 			table.insert(result, RUSH_VIM_COUNT)
-		else
+		elseif value == "none" then
+			table.insert(result, RUSH_NONE)
+		elseif
+			type(value) == "number"
+			and value >= 1
+			and value == math.floor(value)
+		then
 			table.insert(result, value)
+		else
+			error(("invalid rush_count value: %s"):format(vim.inspect(value)))
 		end
 	end
 	return result
