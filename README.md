@@ -11,8 +11,8 @@ For example:
 ```text
 j               → j
 jj              → j
-jj + hold j     → 10j
-8  + hold j     → 8j
+jj + hold j     → 10j repeat
+8  + hold j     →  8j repeat
 ```
 
 The idea is simple:
@@ -50,7 +50,7 @@ A typical sequence might become:
 ```text
 j           → j
 jj          → j
-jj + hold   → 10j
+jj + hold   → 10j repeat
 ```
 
 The exact behavior depends on your configured timing thresholds and rush counts.
@@ -227,8 +227,8 @@ a possible interaction is:
 ```text
 j               → j
 jj              → j
-jj + hold j     → 10j
-8 + hold j      → 8j
+jj + hold j     → 10j repeat
+8 + hold j      →  8j repeat
 ```
 
 The same mechanism can be used for other motion keys such as:
@@ -273,13 +273,13 @@ As a result, I often end up reaching for the mouse and clicking where I want to 
 Instead of reaching for the mouse, I can use the distance I already have in mind and then hold a motion key:
 
 ```text
-8 + hold j  →  8j
+8 + hold j  →  8j repeat
 ```
 
 Or, without explicitly entering a count:
 
 ```text
-jj + hold j → 10j
+jj + hold j → 10j repeat
 ```
 
 `rush.nvim` explores using the **time axis of key input** as another dimension of Vim's key mappings.
