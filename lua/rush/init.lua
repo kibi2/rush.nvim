@@ -52,10 +52,12 @@ local default_config = {
 	},
 	rush_count = {
 		"vim",
-		5,
-		10,
-		20,
-		40,
+		2,
+		4,
+		8,
+		16,
+		32,
+		64,
 	},
 }
 

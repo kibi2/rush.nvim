@@ -11,8 +11,8 @@ For example:
 ```text
 j               → j
 jj              → j
-jj + hold j     → 10j repeat
-8  + hold j     →  8j repeat
+jj + hold j     → 4j repeat
+7  + hold j     → 7j repeat
 ```
 
 The idea is simple:
@@ -27,7 +27,7 @@ The idea is simple:
 * Works with normal and visual modes
 * Configurable timing thresholds
 * Configurable rush counts
-* Built-in diagnosis command for measuring your keyboard's actual timing
+* Built-in diagnosis command for measuring key repeat timing
 
 ## How it works
 
@@ -50,31 +50,24 @@ A typical sequence might become:
 ```text
 j           → j
 jj          → j
-jj + hold   → 10j repeat
+jj + hold   → 4j repeat
 ```
 
 The exact behavior depends on your configured timing thresholds and rush counts.
 
-Different keys are treated independently. Typing another key breaks the current sequence.
+Different keys are treated independently. Typing another key starts a new sequence
 
 ## Installation
 
-Using [lazy.nvim]:
-
-```lua
-{
-	"kibi2/rush.nvim",
-	opts = {},
-}
-```
-
-Or:
+### lazy.nvim
 
 ```lua
 {
 	"kibi2/rush.nvim",
 	config = function()
-		require("rush").setup()
+    require('rush').setup {
+      interval = { rep = 100, hold1 = 490, hold2 = 510, tap = 1000, },
+    }
 	end,
 }
 ```
@@ -85,19 +78,8 @@ The default configuration is:
 
 ```lua
 require("rush").setup({
-	interval = {
-		rep = 95,
-		hold1 = 490,
-		hold2 = 510,
-		tap = 1000,
-	},
-
-	rush_count = {
-		"vim",
-		5,
-		10,
-		20,
-	},
+	interval = { rep = 95, hold1 = 490, hold2 = 510, tap = 1000, },
+	rush_count = { "vim", 2, 4, 8, 16, 32, 64, },
 })
 ```
 
@@ -116,15 +98,15 @@ interval = {
 
 All values are in milliseconds.
 
-| Interval         | Event       |
+| Interval | Event |
 | ---------------- | ----------- |
-| `<= rep`         | hold repeat |
-| `rep .. hold1`   | tap         |
-| `hold1 .. hold2` | hold start  |
-| `hold2 .. tap`   | tap         |
-| `> tap`          | click       |
+| `<= rep` | hold repeat |
+| `rep .. hold1` | tap |
+| `hold1 .. hold2` | hold start |
+| `hold2 .. tap` | tap |
+| `> tap` | click |
 
-A different keyboard, operating system, or key-repeat setting may require different values.
+Different operating systems or key-repeat settings may require different values.
 
 For this reason, `rush.nvim` provides a diagnosis command.
 
@@ -184,12 +166,7 @@ Press `<Esc>` to finish.
 The default is:
 
 ```lua
-rush_count = {
-	"vim",
-	5,
-	10,
-	20,
-}
+rush_count = { "vim", 2, 4, 8, 16, 32, 64, }
 ```
 
 `"vim"` uses the count supplied by Vim.
@@ -199,12 +176,7 @@ rush_count = {
 For example:
 
 ```lua
-rush_count = {
-	"none",
-	5,
-	10,
-	20,
-}
+rush_count = { "none", 2, 4, 8, 16, 32, 64, }
 ```
 
 The number of entries determines how many rush levels are available.
@@ -214,12 +186,7 @@ The number of entries determines how many rush levels are available.
 With:
 
 ```lua
-rush_count = {
-	"vim",
-	5,
-	10,
-	20,
-}
+rush_count = { "vim", 2, 4, 8, 16, 32, 64, }
 ```
 
 a possible interaction is:
@@ -227,8 +194,8 @@ a possible interaction is:
 ```text
 j               → j
 jj              → j
-jj + hold j     → 10j repeat
-8 + hold j      →  8j repeat
+jj + hold j     → 4j repeat
+7 + hold j      → 7j repeat
 ```
 
 The same mechanism can be used for other motion keys such as:
@@ -237,23 +204,6 @@ The same mechanism can be used for other motion keys such as:
 h j k l
 w b e
 W B E
-```
-
-The default key set is:
-
-```lua
-{
-	"h",
-	"j",
-	"k",
-	"l",
-	"w",
-	"b",
-	"e",
-	"W",
-	"B",
-	"E",
-}
 ```
 
 ## Why?
@@ -273,13 +223,13 @@ As a result, I often end up reaching for the mouse and clicking where I want to 
 Instead of reaching for the mouse, I can use the distance I already have in mind and then hold a motion key:
 
 ```text
-8 + hold j  →  8j repeat
+7 + hold j  →  7j repeat
 ```
 
 Or, without explicitly entering a count:
 
 ```text
-jj + hold j → 10j repeat
+jj + hold j → 4j repeat
 ```
 
 `rush.nvim` explores using the **time axis of key input** as another dimension of Vim's key mappings.
@@ -289,30 +239,20 @@ The goal is not to replace Vim's motions, but to make moving around large docume
 ## Requirements
 
 * Neovim 0.10+
-* A keyboard with configurable key repeat behavior
+* A system with key repeat support
 
 ## Limitations
 
 `rush.nvim` relies on Neovim's key mapping and input timing.
 
-The exact timing characteristics depend on:
+The exact timing characteristics depend on your:
 
 * operating system
-* keyboard
 * keyboard repeat settings
-* terminal
-* Neovim input processing
 
 Use `:Rush diagnosis` to determine suitable values for your environment.
-
-## Status
-
-`rush.nvim` is experimental.
-
-The basic implementation is intentionally small. The goal is to explore whether time-based key mappings are useful in everyday Neovim use.
-
-If the idea turns out to be useful, additional patterns may be added in the future.
 
 ## License
 
 MIT
+
