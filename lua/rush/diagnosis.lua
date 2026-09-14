@@ -4,13 +4,7 @@ local M = {}
 -- config
 --------------------------------------------------
 
-local key_set = {
-	"h",
-	"j",
-	"k",
-	"l",
-}
-
+local key_set = { "h", "j", "k", "l", }
 local margin_rate = 0.2
 
 --------------------------------------------------
@@ -111,12 +105,12 @@ local function measure_key(key)
 		table.insert(hold_intervals, delta_t)
 		first_repeat = false
 	else
-		local hold_max = max_value(hold_intervals)
-		if delta_t <= hold_max then
-			table.insert(repeat_intervals, delta_t)
-		else
-			first_repeat = true
-		end
+		-- local hold_max = max_value(hold_intervals)
+		-- if delta_t <= hold_max then
+		table.insert(repeat_intervals, delta_t)
+		-- else
+		-- first_repeat = true
+		-- end
 	end
 
 	prev_time = now
@@ -137,9 +131,13 @@ local function suggested_config()
 	local hold_margin = margin(hold_min, hold_max)
 	local repeat_margin = margin(repeat_min, repeat_max)
 
-	local rep
+	local rep1
 	if repeat_max then
-		rep = repeat_max + repeat_margin
+		rep1 = repeat_min - repeat_margin
+	end
+	local rep2
+	if repeat_max then
+		rep2 = repeat_max + repeat_margin
 	end
 
 	local hold1
@@ -153,7 +151,8 @@ local function suggested_config()
 	end
 
 	return {
-		"  rep   = " .. format_value(rep) .. ",",
+		"  rep1  = " .. format_value(rep1) .. ",",
+		"  rep2  = " .. format_value(rep2) .. ",",
 		"  hold1 = " .. format_value(hold1) .. ",",
 		"  hold2 = " .. format_value(hold2) .. ",",
 	}

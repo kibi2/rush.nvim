@@ -1,27 +1,12 @@
 local log = require("rush.log")
 local diagnosis = require("rush.diagnosis")
+local KeyEvent = require("rush.keyevent")
 
 local M = {}
 
 --------------------------------------------------
 -- constants
 --------------------------------------------------
-
----@enum State
-local STATE = {
-	START = "start",
-	CLICK = "click",
-	TAP = "tap",
-	HOLD = "hold",
-}
-
----@enum Event
-local EVENT = {
-	CLICK = "click",
-	TAP = "tap",
-	HOLD_START = "hold_start",
-	HOLD_REPEAT = "hold_repeat",
-}
 
 local RUSH_VIM_COUNT = -1
 local RUSH_NONE = 0
@@ -30,50 +15,14 @@ local RUSH_NONE = 0
 -- default config
 --------------------------------------------------
 
-local key_set = {
-	"h",
-	"j",
-	"k",
-	"l",
-	"w",
-	"b",
-	"e",
-	"W",
-	"B",
-	"E",
-}
-
+local key_set = { "h", "j", "k", "l", "w", "b", "e", "W", "B", "E", }
 local default_config = {
-	interval = {
-		rep = 95,
-		hold1 = 490,
-		hold2 = 510,
-		tap = 1000,
-	},
-	rush_count = {
-		"vim",
-		2,
-		4,
-		8,
-		16,
-		32,
-		64,
-	},
+	interval = { rep1 = 66, rep2 = 98, hold1 = 490, hold2 = 510, tap = 1000, },
+	rush_count = { "vim", 2, 4, 8, 16, 32, 64, },
 }
-
---------------------------------------------------
--- runtime state
---------------------------------------------------
 
 local config
-local interval
 local rush_count
-
-local state = STATE.START
-local prev_key = ""
-local prev_time = 0
-local first_count = 0
-local tap_count = 0
 
 --------------------------------------------------
 -- config
@@ -111,128 +60,37 @@ end
 local function setup_config(opts)
 	config =
 		vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
-	interval = config.interval
 	rush_count = make_rush_count(config.rush_count)
 end
 
---------------------------------------------------
--- event
---------------------------------------------------
-
----@param typed string
----@param delta_t number
----@return Event
-local function get_event(typed, delta_t)
-	if prev_key ~= typed then
-		return EVENT.CLICK
-	elseif delta_t <= interval.rep then
-		return EVENT.HOLD_REPEAT
-	elseif interval.hold1 <= delta_t and delta_t <= interval.hold2 then
-		return EVENT.HOLD_START
-	elseif delta_t <= interval.tap then
-		return EVENT.TAP
-	else
-		return EVENT.CLICK
-	end
-end
-
---------------------------------------------------
--- state
---------------------------------------------------
-
----@param old_state State
-local function state_exit(old_state) end
-
----@param new_state State
-local function state_enter(new_state)
-	if new_state == STATE.CLICK then
-		first_count = vim.v.count
-		tap_count = 1
-	elseif new_state == STATE.TAP then
-		tap_count = tap_count + 1
-	end
-end
-
----@param new_state State
-local function transition(new_state)
-	state_exit(state)
-	state = new_state
-	state_enter(state)
-end
-
---------------------------------------------------
--- motion
---------------------------------------------------
-
+---@param event  KeyEvent
 ---@return string
-local function get_count()
-	if state ~= STATE.HOLD then
+local function get_count(event)
+	if event.type ~= "repeat" then
 		return ""
 	end
-	local count = rush_count[tap_count] or rush_count[#rush_count]
+	local count = rush_count[event.nt] or rush_count[#rush_count]
 	if count == 0 then
 		return ""
 	elseif count == RUSH_VIM_COUNT then
-		if first_count == 0 then
+		if event.vim_count == 0 then
 			return ""
 		else
-			return tostring(first_count)
+			return tostring(event.vim_count)
 		end
 	end
 	return tostring(count)
 end
 
+---@param event KeyEvent
 ---@return string
-local function get_new_motion()
-	return get_count() .. prev_key
+local function get_new_motion(event)
+	return get_count(event) .. event.key
 end
 
 --------------------------------------------------
 -- event processing
 --------------------------------------------------
-
----@param event Event
-local function process_event(event)
-	if state == STATE.START then
-		transition(STATE.CLICK)
-	elseif state == STATE.CLICK then
-		if event == EVENT.CLICK then
-			transition(STATE.CLICK)
-		elseif event == EVENT.TAP then
-			transition(STATE.TAP)
-		elseif event == EVENT.HOLD_START then
-			transition(STATE.HOLD)
-		end
-	elseif state == STATE.TAP then
-		if event == EVENT.TAP then
-			transition(STATE.TAP)
-		elseif event == EVENT.HOLD_START then
-			transition(STATE.HOLD)
-		else
-			transition(STATE.CLICK)
-		end
-	elseif state == STATE.HOLD then
-		if event ~= EVENT.HOLD_REPEAT then
-			transition(STATE.CLICK)
-		end
-	end
-end
-
---------------------------------------------------
--- input
---------------------------------------------------
-
----@param typed string
----@return number
-local function key_in(typed)
-	local now = vim.loop.hrtime()
-	local delta_t = (now - prev_time) / 1e6
-	local event = get_event(typed, delta_t)
-	process_event(event)
-	prev_key = typed
-	prev_time = now
-	return delta_t
-end
 
 ---@param typed string
 local function on_key(_, typed)
@@ -240,12 +98,22 @@ local function on_key(_, typed)
 		return
 	end
 	if not vim.tbl_contains(key_set, typed) then
-		key_in(typed)
+		local keyevent = KeyEvent.on_key_event(typed)
+		log.debug(
+			"%s\t%s\t: %d, [%d %d]\t%s [%d]",
+			keyevent.source,
+			keyevent.type,
+			keyevent.vim_count,
+			keyevent.nt,
+			keyevent.nr,
+			get_new_motion(keyevent),
+			keyevent.interval
+		)
 	end
 end
 
 --------------------------------------------------
--- setup
+-- setupgv
 --------------------------------------------------
 
 ---@param opts? table
@@ -253,16 +121,18 @@ function M.setup(opts)
 	setup_config(opts or {})
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
-			local delta_t = key_in(motion)
+			local keyevent = KeyEvent.keymap_event(motion)
 			log.debug(
-				"%s\t: %d, %d\t%s [%d]",
-				state,
-				first_count,
-				tap_count,
-				get_new_motion(),
-				delta_t
+				"%s\t%s\t: %d, [%d %d]\t%s [%d]",
+				keyevent.source,
+				keyevent.type,
+				keyevent.vim_count,
+				keyevent.nt,
+				keyevent.nr,
+				get_new_motion(keyevent),
+				keyevent.interval
 			)
-			return get_new_motion()
+			return get_new_motion(keyevent)
 		end, { expr = true })
 	end
 	vim.api.nvim_create_user_command("Rush", function(opts)
