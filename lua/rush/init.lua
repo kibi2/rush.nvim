@@ -1,6 +1,6 @@
 local log = require("rush.log")
-local diagnosis = require("rush.diagnosis")
-local KeyEvent = require("rush.keyevent")
+-- local diagnosis = require("rush.diagnosis")
+local KeyEvent = require("keyevent.keyevent")
 
 local M = {}
 
@@ -98,17 +98,7 @@ local function on_key(_, typed)
 		return
 	end
 	if not vim.tbl_contains(key_set, typed) then
-		local keyevent = KeyEvent.on_key_event(typed)
-		log.debug(
-			"%s\t%s\t: %d, [%d %d]\t%s [%d]",
-			keyevent.source,
-			keyevent.type,
-			keyevent.vim_count,
-			keyevent.nt,
-			keyevent.nr,
-			get_new_motion(keyevent),
-			keyevent.interval
-		)
+		KeyEvent.on_key_event(typed)
 	end
 end
 
@@ -122,34 +112,9 @@ function M.setup(opts)
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
 			local keyevent = KeyEvent.keymap_event(motion)
-			log.debug(
-				"%s\t%s\t: %d, [%d %d]\t%s [%d]",
-				keyevent.source,
-				keyevent.type,
-				keyevent.vim_count,
-				keyevent.nt,
-				keyevent.nr,
-				get_new_motion(keyevent),
-				keyevent.interval
-			)
 			return get_new_motion(keyevent)
 		end, { expr = true })
 	end
-	vim.api.nvim_create_user_command("Rush", function(opts)
-		if opts.args == "diagnosis" then
-			diagnosis.start()
-		else
-			vim.notify(
-				"Unknown Rush command: " .. opts.args,
-				vim.log.levels.ERROR
-			)
-		end
-	end, {
-		nargs = 1,
-		complete = function()
-			return { "diagnosis" }
-		end,
-	})
 end
 
 vim.on_key(on_key)
