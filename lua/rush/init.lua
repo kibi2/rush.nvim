@@ -88,20 +88,6 @@ local function get_new_motion(event)
 end
 
 --------------------------------------------------
--- event processing
---------------------------------------------------
-
----@param typed string
-local function on_key(_, typed)
-	if #typed == 0 then
-		return
-	end
-	if not vim.tbl_contains(key_set, typed) then
-		KeyEvent.on_key_event(typed)
-	end
-end
-
---------------------------------------------------
 -- setupgv
 --------------------------------------------------
 
@@ -115,7 +101,5 @@ function M.setup(opts)
 		end, { expr = true })
 	end
 end
-
-vim.on_key(on_key)
 
 return M
