@@ -1,5 +1,4 @@
 local log = require("rush.log")
--- local diagnosis = require("rush.diagnosis")
 local KeyEvent = require("keyevent.keyevent")
 
 local M = {}
