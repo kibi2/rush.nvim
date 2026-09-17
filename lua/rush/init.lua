@@ -9,7 +9,10 @@ local STATE = {
 	RUSH = "rush",
 }
 
-local key_set = { "h", "j", "k", "l", "w", "b", "e", "W", "B", "E" }
+local key_sets = {
+	{ "h", "l" }, { "j", "k" }, { "k", "j" }, { "l", "h" },
+	{ "w", "b" }, { "b", "w" }, { "e", "ge" },
+	{ "W", "B" }, { "B", "W" }, { "E", "gE" } }
 
 local state = STATE.NORMAL
 local rush_count = 0
@@ -21,6 +24,13 @@ end
 
 ---@return string
 local function get_key(event)
+	if rush_count < 0 then
+		for _, key_set in ipairs(key_sets) do
+			if event.key == key_set[1] then
+				return key_set[2]
+			end
+		end
+	end
 	return event.key
 end
 
@@ -60,7 +70,11 @@ local function process_rush(event)
 	end
 	if event.nt == 1 and event.nr == 0 then
 	elseif event.nt == 1 and event.nr == 1 then
-		rush_count = math.floor(rush_count / 2)
+		if math.abs(rush_count) == 1 then
+			rush_count = -rush_count
+		else
+			rush_count = math.floor(rush_count / 2)
+		end
 	elseif event.nt > 1 and event.nr == 0 then
 		rush_count = rush_count * 2
 	end
@@ -80,7 +94,8 @@ end
 
 function M.setup()
 	-- setup_config(opts or {})
-	for _, motion in ipairs(key_set) do
+	for _, key_set in ipairs(key_sets) do
+		local motion = key_set[1]
 		vim.keymap.set({ "n", "x" }, motion, function()
 			local event = KeyEvent.keymap_event(motion)
 			process_event(event)
