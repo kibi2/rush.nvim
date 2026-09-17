@@ -3,64 +3,16 @@ local KeyEvent = require("keyevent.keyevent")
 
 local M = {}
 
---------------------------------------------------
--- constants
---------------------------------------------------
-
-local RUSH_VIM_COUNT = -1
-local RUSH_NONE = 0
-
---------------------------------------------------
--- default config
---------------------------------------------------
-
-local key_set = { "h", "j", "k", "l", "w", "b", "e", "W", "B", "E", }
-local default_config = {
-	interval = { rep1 = 66, rep2 = 98, hold1 = 490, hold2 = 510, tap = 1000, },
-	rush_count = { "vim", 2, 4, 8, 16, 32, 64, },
+---@enum RushState
+local STATE = {
+	NORMAL = "normal",
+	RUSH = "rush",
 }
 
-local config
+local key_set = { "h", "j", "k", "l", "w", "b", "e", "W", "B", "E" }
+
+local state = STATE.NORMAL
 local rush_count
-
---------------------------------------------------
--- config
---------------------------------------------------
-
----@alias RushCountValue "vim"|"none"|integer
-
----@param values RushCountValue[]
----@return any[]
-local function make_rush_count(values)
-	if type(values) ~= "table" then
-		error("rush_count must be a table")
-	end
-
-	local result = {}
-	for _, value in ipairs(values) do
-		if value == "vim" then
-			table.insert(result, RUSH_VIM_COUNT)
-		elseif value == "none" then
-			table.insert(result, RUSH_NONE)
-		elseif
-			type(value) == "number"
-			and value >= 1
-			and value == math.floor(value)
-		then
-			table.insert(result, value)
-		else
-			error(("invalid rush_count value: %s"):format(vim.inspect(value)))
-		end
-	end
-	return result
-end
-
----@param opts table
-local function setup_config(opts)
-	config =
-		vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
-	rush_count = make_rush_count(config.rush_count)
-end
 
 ---@param event  KeyEvent
 ---@return string
@@ -81,22 +33,53 @@ local function get_count(event)
 	return tostring(count)
 end
 
+---@param new_state RushState
+---@return string
+local function transition(new_state)
+	state = new_state
+end
+
 ---@param event KeyEvent
 ---@return string
 local function get_new_motion(event)
-	return get_count(event) .. event.key
+	if state == STATE.NORMAL then
+		return event.key
+	elseif state == STATE.RUSH then
+		return event.key
+	end
+	-- return get_count(event) .. event.key
 end
 
---------------------------------------------------
--- setupgv
---------------------------------------------------
+---@param event KeyEvent
+local function process_normal(event)
+	if event.nr == 1 then
+		transition(STATE.RUSH)
+	end
+end
 
----@param opts? table
-function M.setup(opts)
-	setup_config(opts or {})
+---@param event KeyEvent
+local function process_rush(event)
+	if not KeyEvent.is_same_key(event) or event.type ~= KeyEvent.KEY_EVENT.REPEAT then
+		transition(STATE.NORMAL)
+	end
+end
+
+---@param event KeyEvent
+local function process_event(event)
+	if state == STATE.NORMAL then
+		process_normal(event)
+	else
+		process_rush(event)
+	end
+end
+
+function M.setup()
+	-- setup_config(opts or {})
 	for _, motion in ipairs(key_set) do
 		vim.keymap.set({ "n", "x" }, motion, function()
 			local keyevent = KeyEvent.keymap_event(motion)
+			process_event(keyevent)
+			log.probe(state)
 			return get_new_motion(keyevent)
 		end, { expr = true })
 	end
