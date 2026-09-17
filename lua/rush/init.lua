@@ -16,10 +16,7 @@ local rush_count = 0
 
 ---@return integer
 local function get_count()
-	if rush_count >= 2 then
-		return rush_count
-	end
-	return 1
+	return math.abs(rush_count)
 end
 
 ---@return string
@@ -58,8 +55,14 @@ end
 
 ---@param event KeyEvent
 local function process_rush(event)
-	if not KeyEvent.is_same_key(event) or event.type ~= KeyEvent.KEY_EVENT.REPEAT then
+	if not KeyEvent.is_same_key(event) or event.type == KeyEvent.KEY_EVENT.CLICK then
 		transition(STATE.NORMAL)
+	end
+	if event.nt == 1 and event.nr == 0 then
+	elseif event.nt == 1 and event.nr == 1 then
+		rush_count = math.floor(rush_count / 2)
+	elseif event.nt > 1 and event.nr == 0 then
+		rush_count = rush_count * 2
 	end
 end
 
