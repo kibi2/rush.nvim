@@ -19,9 +19,9 @@ local key_sets = {
 	{ "w", "b" },
 	{ "b", "w" },
 	{ "e", "ge" },
-	{ "<S-w>", "<S-b>" },
-	{ "<S-b>", "<S-w>" },
-	{ "<S-e>", "g<S-e>" },
+	{ "W", "B" },
+	{ "B", "W" },
+	{ "E", "gE" },
 }
 local accele = { forward = "C", backward = "A" }
 
@@ -50,7 +50,11 @@ local function get_motion(key, meta)
 	if #meta == 0 then
 		return key
 	else
-		return string.format("<%s-%s>", meta, key)
+		local shift_meta = key
+		if key:match("^[A-Z]$") then
+			shift_meta = "S-" .. key
+		end
+		return string.format("<%s-%s>", meta, shift_meta)
 	end
 end
 
@@ -85,6 +89,7 @@ local function restore_keymaps(bufnr, key)
 			log.probe(result)
 		end
 	end
+	saved_keymaps[bufnr] = saved_keymaps[bufnr] or {}
 	local maps = saved_keymaps[bufnr][key]
 	for _, map in ipairs(maps or {}) do
 		local rhs = map.callback or map.rhs
