@@ -115,34 +115,6 @@ local function restore_metakeymap()
 	saved_keymaps[bufnr] = {}
 end
 
-local function set_metakeymap()
-	local bufnr = vim.api.nvim_get_current_buf()
-	for _, meta in ipairs({ accele.forward, accele.backward }) do
-		for _, key_set in ipairs(key_sets) do
-			local motion = get_motion(key_set[1], meta)
-			save_keymaps(bufnr, motion)
-			log.probe(motion)
-			vim.keymap.set(KEYMAP_MODE, motion, function()
-				log.probe(motion)
-				-- local event = KeyEvent.keymap_event(motion)
-				-- process_event(event)
-				-- return get_new_motion(event)
-				return ""
-			end, { expr = true, buffer = bufnr })
-		end
-	end
-end
-
----@param new_state RushState
-local function transition(new_state)
-	if state == STATE.NORMAL and new_state == STATE.RUSH then
-		set_metakeymap()
-	elseif state == STATE.RUSH and new_state == STATE.NORMAL then
-		restore_metakeymap()
-	end
-	state = new_state
-end
-
 ---@param event KeyEvent
 ---@return string
 local function get_new_motion(event)
@@ -159,42 +131,106 @@ local function get_new_motion(event)
 	end
 end
 
+local function debug_event(event)
+	log.probe(
+		"%s %s %d %s",
+		KeyEvent.to_string(event),
+		state,
+		rush_count,
+		get_new_motion(event)
+	)
+end
+
+local function increase()
+	if rush_count < 0 then
+		rush_count = math.modf(rush_count / 2)
+	elseif rush_count == 0 then
+		rush_count = 1
+	else
+		rush_count = rush_count * 2
+	end
+end
+
+local function decrease()
+	if rush_count < 0 then
+		rush_count = rush_count * 2
+	elseif rush_count == 0 then
+		rush_count = -1
+	else
+		rush_count = math.modf(rush_count / 2)
+	end
+end
+
+local function set_metakeymap()
+	local bufnr = vim.api.nvim_get_current_buf()
+	for _, meta in ipairs({ accele.forward, accele.backward }) do
+		for _, key_set in ipairs(key_sets) do
+			local motion = get_motion(key_set[1], meta)
+			save_keymaps(bufnr, motion)
+			vim.keymap.set(KEYMAP_MODE, motion, function()
+				return M.key_process(motion)
+			end, { expr = true, buffer = bufnr })
+		end
+	end
+end
+
+---@param new_state RushState
+---@param event KeyEvent
+local function transition(new_state, event)
+	if state == STATE.NORMAL and new_state == STATE.RUSH then
+		set_metakeymap()
+		rush_count = rush_count * 2 ^ (event.nt - 1)
+	elseif state == STATE.RUSH and new_state == STATE.NORMAL then
+		restore_metakeymap()
+		rush_count = 1
+	end
+	state = new_state
+end
+
+local prev_meta = ""
+
+---@param event KeyEvent
+local function check_tranist(event)
+	if state == STATE.NORMAL then
+		if event.nr == 1 then
+			transition(STATE.RUSH, event)
+		end
+	else
+		if
+			not KeyEvent.is_same_key(event)
+			or event.type == KeyEvent.KEY_EVENT.CLICK
+		then
+			transition(STATE.NORMAL, event)
+			prev_meta = ""
+		end
+	end
+end
+
 ---@param event KeyEvent
 local function process_normal(event)
-	if event.nr == 1 then
-		transition(STATE.RUSH)
-		rush_count = rush_count * 2 ^ (event.nt - 1)
+	if not KeyEvent.is_same_key(event) then
+		rush_count = vim.v.count1
 	end
 end
 
 ---@param event KeyEvent
 local function process_rush(event)
-	if
-		not KeyEvent.is_same_key(event)
-		or event.type == KeyEvent.KEY_EVENT.CLICK
-	then
-		transition(STATE.NORMAL)
+	if event.nr == 0 then
+		increase()
 	end
-	if event.nt == 1 and event.nr == 0 then
-	elseif event.nt == 1 and event.nr == 1 then
-		if math.abs(rush_count) == 1 then
-			rush_count = -rush_count
-		else
-			rush_count = math.floor(rush_count / 2)
+	if prev_meta ~= event.meta_key then
+		if event.meta_key == accele.forward then
+			increase()
+		elseif event.meta_key == accele.backward then
+			decrease()
 		end
-	elseif event.nt > 1 and event.nr == 0 then
-		rush_count = rush_count * 2
 	end
+	prev_meta = event.meta_key
 end
 
 ---@param event KeyEvent
 local function process_event(event)
-	if
-		not KeyEvent.is_same_key(event)
-		or event.type == KeyEvent.KEY_EVENT.CLICK
-	then
-		rush_count = vim.v.count1
-	end
+	check_tranist(event)
 	if state == STATE.NORMAL then
 		process_normal(event)
 	else
@@ -202,21 +238,19 @@ local function process_event(event)
 	end
 end
 
+function M.key_process(motion)
+	local event = KeyEvent.keymap_event(motion)
+	process_event(event)
+	debug_event(event)
+	return get_new_motion(event)
+end
+
 function M.setup()
 	-- setup_config(opts or {})
 	for _, key_set in ipairs(key_sets) do
 		local motion = key_set[1]
 		vim.keymap.set(KEYMAP_MODE, motion, function()
-			local event = KeyEvent.keymap_event(motion)
-			process_event(event)
-			log.probe(
-				"%s %s %d %s",
-				KeyEvent.to_string(event),
-				state,
-				rush_count,
-				get_new_motion(event)
-			)
-			return get_new_motion(event)
+			return M.key_process(motion)
 		end, { expr = true })
 	end
 end
