@@ -12,16 +12,7 @@ local STATE = {
 local KEYMAP_MODE = { "n", "x" }
 
 local key_sets = {
-	{ "h", "l" },
-	{ "j", "k" },
-	{ "k", "j" },
-	{ "l", "h" },
-	{ "w", "b" },
-	{ "b", "w" },
-	{ "e", "ge" },
-}
-local key_sets2 = {
-	h = "l", j="k", k="j",l="h", w="b",b="w",e="ge"
+	h = "l", j="k", k="j", l="h", w="b", b="w",e ="ge",
 }
 local accelerate = { 
 	forward = KeyEvent.KEY_EVENT_META_MASK.C,
@@ -41,11 +32,7 @@ end
 ---@return string
 local function get_key(event)
 	if rush_count < 0 then
-		for _, key_set in ipairs(key_sets) do
-			if event.key == key_set[1] then
-				return key_set[2]
-			end
-		end
+		return key_sets[event.key]
 	end
 	return event.key
 end
@@ -55,38 +42,38 @@ local function save_keymap(bufnr, mode, key)
 	local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
 	for _, map in ipairs(maps) do
 		if KeyEvent.is_same_key_notation(map.lhs, key) then
-			saved_keymaps[bufnr][key][mode] = map
-			return
+			return map
 		end
 	end
 end
 
----@param key string
-local function save_keymaps(bufnr, key)
-	saved_keymaps[bufnr][key] = saved_keymaps[bufnr][key] or {}
-	for _, mode in ipairs(KEYMAP_MODE) do
-		save_keymap(bufnr, mode, key)
+---@param bufnr number
+local function save_keymaps(bufnr)
+	local save = {}
+	for _, key in ipairs(rush_motions) do
+		for _, mode in ipairs(KEYMAP_MODE) do
+			save[#save+1] = save_keymap(bufnr, mode, key)
+		end
 	end
+	saved_keymaps[bufnr] = save
 end
 
-local function restore_keymaps(bufnr, maps)
-	for mode, map in pairs(maps ) do
-		local rhs = map.callback or map.rhs
-		vim.keymap.set(mode, map.lhs, rhs, {
-			buffer = bufnr,
-			expr = map.expr == 1,
-			silent = map.silent == 1,
-			noremap = map.noremap == 1,
-			nowait = map.nowait == 1,
-			desc = map.desc,
-		})
-	end
+local function restore_keymaps(map)
+	local rhs = map.callback or map.rhs
+	vim.keymap.set(map.mode, map.lhs, rhs, {
+		buffer = map.bufnr,
+		expr = map.expr == 1,
+		silent = map.silent == 1,
+		noremap = map.noremap == 1,
+		nowait = map.nowait == 1,
+		desc = map.desc,
+	})
 end
 
 local function restore_metakeymaps()
 	local bufnr = vim.api.nvim_get_current_buf()
-	for _, maps in pairs(saved_keymaps[bufnr]) do
-		restore_keymaps(bufnr, maps)
+	for _, map in ipairs(saved_keymaps[bufnr]) do
+		restore_keymaps(map)
 	end
 	saved_keymaps[bufnr] = nil
 end
@@ -139,15 +126,14 @@ end
 
 local function set_metakeymaps()
 	local bufnr = vim.api.nvim_get_current_buf()
-	saved_keymaps[bufnr] = {}
+	save_keymaps(bufnr)
 	for _, motion in ipairs(rush_motions) do
-		save_keymaps(bufnr, motion)
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)
 		end, { expr = true, buffer = bufnr })
 	end
 		log.probe("start rush")
-		log.probe(saved_keymaps[bufnr]["<C-w>"]["n"])
+		log.probe(saved_keymaps[bufnr])
 end
 
 local function remove_metakeymap()
@@ -235,16 +221,15 @@ end
 
 function M.setup()
 	-- setup_config(opts or {})
-	for _, key_set in ipairs(key_sets) do
-		local motion = key_set[1]
+	for motion, _ in pairs(key_sets) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)
 		end, { expr = true })
 	end
 	rush_motions = {}
-	for _, key_set in ipairs(key_sets) do
+	for motion, _ in pairs(key_sets) do
 		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
-			local motion = KeyEvent.unparse(key_set[1], meta)
+			local motion = KeyEvent.unparse(motion, meta)
 			rush_motions[#rush_motions + 1] = motion
 		end
 	end
