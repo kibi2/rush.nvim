@@ -19,11 +19,11 @@ local key_sets = {
 	{ "w", "b" },
 	{ "b", "w" },
 	{ "e", "ge" },
-	{ "W", "B" },
-	{ "B", "W" },
-	{ "E", "gE" },
 }
-local accele = { forward = "C", backward = "A" }
+local accele = { 
+	forward = KeyEvent.KEY_EVENT_META_MASK.C,
+	backward = KeyEvent.KEY_EVENT_META_MASK.A,
+}
 
 local state = STATE.NORMAL
 local rush_count = 0
@@ -46,18 +46,6 @@ local function get_key(event)
 	return event.key
 end
 
-local function get_motion(key, meta)
-	if #meta == 0 then
-		return key
-	else
-		local shift_meta = key
-		if key:match("^[A-Z]$") then
-			shift_meta = "S-" .. key
-		end
-		return string.format("<%s-%s>", meta, shift_meta)
-	end
-end
-
 ---@param key string
 local function save_keymap(bufnr, mode, key)
 	saved_keymaps[bufnr][key] = saved_keymaps[bufnr][key] or {}
@@ -65,7 +53,6 @@ local function save_keymap(bufnr, mode, key)
 	for _, map in ipairs(maps) do
 		if map.lhs == key then
 			saved_keymaps[bufnr][key][mode] = map
-			log.probe(map)
 			return
 		end
 	end
@@ -108,7 +95,7 @@ local function restore_metakeymap()
 	local bufnr = vim.api.nvim_get_current_buf()
 	for _, meta in ipairs({ accele.forward, accele.backward }) do
 		for _, key_set in ipairs(key_sets) do
-			local motion = get_motion(key_set[1], meta)
+			local motion = KeyEvent.unparse(key_set[1], meta)
 			restore_keymaps(bufnr, motion)
 		end
 	end
@@ -165,11 +152,13 @@ local function set_metakeymap()
 	local bufnr = vim.api.nvim_get_current_buf()
 	for _, meta in ipairs({ accele.forward, accele.backward }) do
 		for _, key_set in ipairs(key_sets) do
-			local motion = get_motion(key_set[1], meta)
-			save_keymaps(bufnr, motion)
-			vim.keymap.set(KEYMAP_MODE, motion, function()
-				return M.key_process(motion)
-			end, { expr = true, buffer = bufnr })
+			local motion = KeyEvent.unparse(key_set[1], meta)
+			if motion then
+				save_keymaps(bufnr, motion)
+				vim.keymap.set(KEYMAP_MODE, motion, function()
+					return M.key_process(motion)
+				end, { expr = true, buffer = bufnr })
+			end
 		end
 	end
 end
@@ -187,8 +176,6 @@ local function transition(new_state, event)
 	state = new_state
 end
 
-local prev_meta = ""
-
 ---@param event KeyEvent
 local function check_tranist(event)
 	if state == STATE.NORMAL then
@@ -201,7 +188,6 @@ local function check_tranist(event)
 			or event.type == KeyEvent.KEY_EVENT.CLICK
 		then
 			transition(STATE.NORMAL, event)
-			prev_meta = ""
 		end
 	end
 end
@@ -218,14 +204,14 @@ local function process_rush(event)
 	if event.nr == 0 then
 		increase()
 	end
-	if prev_meta ~= event.meta_key then
-		if event.meta_key == accele.forward then
-			increase()
-		elseif event.meta_key == accele.backward then
-			decrease()
-		end
+	if KeyEvent.is_off(event.prev_meta , accele.forward) and
+			KeyEvent.is_on(event.meta , accele.forward) then
+		increase()
 	end
-	prev_meta = event.meta_key
+	if KeyEvent.is_off(event.prev_meta , accele.backward) and 
+			KeyEvent.is_on(event.meta , accele.backward) then
+		decrease()
+	end
 end
 
 ---@param event KeyEvent
