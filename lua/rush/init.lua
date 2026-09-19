@@ -20,7 +20,10 @@ local key_sets = {
 	{ "b", "w" },
 	{ "e", "ge" },
 }
-local accele = { 
+local key_sets2 = {
+	h = "l", j="k", k="j",l="h", w="b",b="w",e="ge"
+}
+local accelerate = { 
 	forward = KeyEvent.KEY_EVENT_META_MASK.C,
 	backward = KeyEvent.KEY_EVENT_META_MASK.A,
 }
@@ -28,6 +31,7 @@ local accele = {
 local state = STATE.NORMAL
 local rush_count = 0
 local saved_keymaps = {}
+local rush_motions
 
 ---@return integer
 local function get_count()
@@ -48,10 +52,9 @@ end
 
 ---@param key string
 local function save_keymap(bufnr, mode, key)
-	saved_keymaps[bufnr][key] = saved_keymaps[bufnr][key] or {}
 	local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
 	for _, map in ipairs(maps) do
-		if map.lhs == key then
+		if KeyEvent.is_same_key_notation(map.lhs, key) then
 			saved_keymaps[bufnr][key][mode] = map
 			return
 		end
@@ -60,27 +63,16 @@ end
 
 ---@param key string
 local function save_keymaps(bufnr, key)
-	saved_keymaps[bufnr] = saved_keymaps[bufnr] or {}
+	saved_keymaps[bufnr][key] = saved_keymaps[bufnr][key] or {}
 	for _, mode in ipairs(KEYMAP_MODE) do
 		save_keymap(bufnr, mode, key)
 	end
 end
 
-local function restore_keymaps(bufnr, key)
-	for _, map in ipairs(KEYMAP_MODE) do
-		local ok, result = pcall(vim.keymap.del, map, key, {
-			buffer = bufnr,
-		})
-		if not ok then
-			log.probe({ map, key, bufnr })
-			log.probe(result)
-		end
-	end
-	saved_keymaps[bufnr] = saved_keymaps[bufnr] or {}
-	local maps = saved_keymaps[bufnr][key]
-	for _, map in ipairs(maps or {}) do
+local function restore_keymaps(bufnr, maps)
+	for mode, map in pairs(maps ) do
 		local rhs = map.callback or map.rhs
-		vim.keymap.set(map.mode, map.lhs, rhs, {
+		vim.keymap.set(mode, map.lhs, rhs, {
 			buffer = bufnr,
 			expr = map.expr == 1,
 			silent = map.silent == 1,
@@ -91,15 +83,12 @@ local function restore_keymaps(bufnr, key)
 	end
 end
 
-local function restore_metakeymap()
+local function restore_metakeymaps()
 	local bufnr = vim.api.nvim_get_current_buf()
-	for _, meta in ipairs({ accele.forward, accele.backward }) do
-		for _, key_set in ipairs(key_sets) do
-			local motion = KeyEvent.unparse(key_set[1], meta)
-			restore_keymaps(bufnr, motion)
-		end
+	for _, maps in pairs(saved_keymaps[bufnr]) do
+		restore_keymaps(bufnr, maps)
 	end
-	saved_keymaps[bufnr] = {}
+	saved_keymaps[bufnr] = nil
 end
 
 ---@param event KeyEvent
@@ -148,16 +137,28 @@ local function decrease()
 	end
 end
 
-local function set_metakeymap()
+local function set_metakeymaps()
 	local bufnr = vim.api.nvim_get_current_buf()
-	for _, meta in ipairs({ accele.forward, accele.backward }) do
-		for _, key_set in ipairs(key_sets) do
-			local motion = KeyEvent.unparse(key_set[1], meta)
-			if motion then
-				save_keymaps(bufnr, motion)
-				vim.keymap.set(KEYMAP_MODE, motion, function()
-					return M.key_process(motion)
-				end, { expr = true, buffer = bufnr })
+	saved_keymaps[bufnr] = {}
+	for _, motion in ipairs(rush_motions) do
+		save_keymaps(bufnr, motion)
+		vim.keymap.set(KEYMAP_MODE, motion, function()
+			return M.key_process(motion)
+		end, { expr = true, buffer = bufnr })
+	end
+		log.probe("start rush")
+		log.probe(saved_keymaps[bufnr]["<C-w>"]["n"])
+end
+
+local function remove_metakeymap()
+	local bufnr = vim.api.nvim_get_current_buf()
+	for _, motion in ipairs(rush_motions) do
+		for _, mode in ipairs(KEYMAP_MODE) do
+			local ok, result =
+				pcall(vim.keymap.del, mode, motion, { buffer = bufnr, })
+			if not ok then
+				log.probe({ mode, motion, bufnr })
+				log.probe(result)
 			end
 		end
 	end
@@ -167,17 +168,18 @@ end
 ---@param event KeyEvent
 local function transition(new_state, event)
 	if state == STATE.NORMAL and new_state == STATE.RUSH then
-		set_metakeymap()
+		set_metakeymaps()
 		rush_count = rush_count * 2 ^ (event.nt - 1)
 	elseif state == STATE.RUSH and new_state == STATE.NORMAL then
-		restore_metakeymap()
+		remove_metakeymap()
+		restore_metakeymaps()
 		rush_count = 1
 	end
 	state = new_state
 end
 
 ---@param event KeyEvent
-local function check_tranist(event)
+local function check_transition(event)
 	if state == STATE.NORMAL then
 		if event.nr == 1 then
 			transition(STATE.RUSH, event)
@@ -185,7 +187,7 @@ local function check_tranist(event)
 	else
 		if
 			not KeyEvent.is_same_key(event)
-			or event.type == KeyEvent.KEY_EVENT.CLICK
+			or event.type == KeyEvent.KEY_EVENT_TYPE.CLICK
 		then
 			transition(STATE.NORMAL, event)
 		end
@@ -204,19 +206,19 @@ local function process_rush(event)
 	if event.nr == 0 then
 		increase()
 	end
-	if KeyEvent.is_off(event.prev_meta , accele.forward) and
-			KeyEvent.is_on(event.meta , accele.forward) then
+	if KeyEvent.is_off(event.prev_meta , accelerate.forward) and
+			KeyEvent.is_on(event.meta , accelerate.forward) then
 		increase()
 	end
-	if KeyEvent.is_off(event.prev_meta , accele.backward) and 
-			KeyEvent.is_on(event.meta , accele.backward) then
+	if KeyEvent.is_off(event.prev_meta , accelerate.backward) and 
+			KeyEvent.is_on(event.meta , accelerate.backward) then
 		decrease()
 	end
 end
 
 ---@param event KeyEvent
 local function process_event(event)
-	check_tranist(event)
+	check_transition(event)
 	if state == STATE.NORMAL then
 		process_normal(event)
 	else
@@ -238,6 +240,13 @@ function M.setup()
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)
 		end, { expr = true })
+	end
+	rush_motions = {}
+	for _, key_set in ipairs(key_sets) do
+		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
+			local motion = KeyEvent.unparse(key_set[1], meta)
+			rush_motions[#rush_motions + 1] = motion
+		end
 	end
 end
 
