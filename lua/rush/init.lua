@@ -6,7 +6,8 @@ local M = {}
 ---@enum RushState
 local STATE = {
 	NORMAL = "normal",
-	RUSH = "rush",
+	HOLD1 = "hold1",
+	HOLD2 = "hold2",
 }
 
 local KEYMAP_MODE = { "n", "x" }
@@ -132,8 +133,6 @@ local function set_metakeymaps()
 			return M.key_process(motion)
 		end, { expr = true, buffer = bufnr })
 	end
-		log.probe("start rush")
-		log.probe(saved_keymaps[bufnr])
 end
 
 local function remove_metakeymap()
@@ -153,10 +152,9 @@ end
 ---@param new_state RushState
 ---@param event KeyEvent
 local function transition(new_state, event)
-	if state == STATE.NORMAL and new_state == STATE.RUSH then
+	if state == STATE.NORMAL and new_state == STATE.HOLD1 then
 		set_metakeymaps()
-		rush_count = rush_count * 2 ^ (event.nt - 1)
-	elseif state == STATE.RUSH and new_state == STATE.NORMAL then
+	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
 		remove_metakeymap()
 		restore_metakeymaps()
 		rush_count = 1
@@ -167,10 +165,15 @@ end
 ---@param event KeyEvent
 local function check_transition(event)
 	if state == STATE.NORMAL then
-		if event.nr == 1 then
-			transition(STATE.RUSH, event)
+		if event.nr == 2 then
+			transition(STATE.HOLD1, event)
 		end
-	else
+	elseif state == STATE.HOLD1 then
+		if event.nr == 1 then
+			transition(STATE.HOLD2, event)
+		end
+	end
+	if state ~= STATE.NORMAL then
 		if
 			not KeyEvent.is_same_key(event)
 			or event.type == KeyEvent.KEY_EVENT_TYPE.CLICK
@@ -189,8 +192,14 @@ end
 
 ---@param event KeyEvent
 local function process_rush(event)
-	if event.nr == 0 then
-		increase()
+	if state == STATE.HOLD1 then
+		if event.nr== 2 then
+			rush_count = rush_count * 2 ^ (event.nt -1)
+		end
+	elseif state == STATE.HOLD2 then
+		if event.nr== 1 then
+			rush_count = rush_count * 2 ^ event.nt 
+		end
 	end
 	if KeyEvent.is_off(event.prev_meta , accelerate.forward) and
 			KeyEvent.is_on(event.meta , accelerate.forward) then
