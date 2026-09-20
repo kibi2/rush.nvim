@@ -13,9 +13,15 @@ local STATE = {
 local KEYMAP_MODE = { "n", "x" }
 
 local key_sets = {
-	h = "l", j="k", k="j", l="h", w="b", b="w",e ="ge",
+	h = "l",
+	j = "k",
+	k = "j",
+	l = "h",
+	w = "b",
+	b = "w",
+	e = "ge",
 }
-local accelerate = { 
+local accelerate = {
 	forward = KeyEvent.KEY_EVENT_META_MASK.C,
 	backward = KeyEvent.KEY_EVENT_META_MASK.A,
 }
@@ -53,7 +59,7 @@ local function save_keymaps(bufnr)
 	local save = {}
 	for _, key in ipairs(rush_motions) do
 		for _, mode in ipairs(KEYMAP_MODE) do
-			save[#save+1] = save_keymap(bufnr, mode, key)
+			save[#save + 1] = save_keymap(bufnr, mode, key)
 		end
 	end
 	saved_keymaps[bufnr] = save
@@ -140,7 +146,7 @@ local function remove_metakeymap()
 	for _, motion in ipairs(rush_motions) do
 		for _, mode in ipairs(KEYMAP_MODE) do
 			local ok, result =
-				pcall(vim.keymap.del, mode, motion, { buffer = bufnr, })
+				pcall(vim.keymap.del, mode, motion, { buffer = bufnr })
 			if not ok then
 				log.probe({ mode, motion, bufnr })
 				log.probe(result)
@@ -150,8 +156,7 @@ local function remove_metakeymap()
 end
 
 ---@param new_state RushState
----@param event KeyEvent
-local function transition(new_state, event)
+local function transition(new_state)
 	if state == STATE.NORMAL and new_state == STATE.HOLD1 then
 		set_metakeymaps()
 	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
@@ -166,11 +171,11 @@ end
 local function check_transition(event)
 	if state == STATE.NORMAL then
 		if event.nr == 2 then
-			transition(STATE.HOLD1, event)
+			transition(STATE.HOLD1)
 		end
 	elseif state == STATE.HOLD1 then
 		if event.nr == 1 then
-			transition(STATE.HOLD2, event)
+			transition(STATE.HOLD2)
 		end
 	end
 	if state ~= STATE.NORMAL then
@@ -178,7 +183,7 @@ local function check_transition(event)
 			not KeyEvent.is_same_key(event)
 			or event.type == KeyEvent.KEY_EVENT_TYPE.CLICK
 		then
-			transition(STATE.NORMAL, event)
+			transition(STATE.NORMAL)
 		end
 	end
 end
@@ -193,20 +198,24 @@ end
 ---@param event KeyEvent
 local function process_rush(event)
 	if state == STATE.HOLD1 then
-		if event.nr== 2 then
-			rush_count = rush_count * 2 ^ (event.nt -1)
+		if event.nr == 2 then
+			rush_count = rush_count * 2 ^ (event.nt - 1)
 		end
 	elseif state == STATE.HOLD2 then
-		if event.nr== 1 then
-			rush_count = rush_count * 2 ^ event.nt 
+		if event.nr == 1 then
+			rush_count = rush_count * 2 ^ event.nt
 		end
 	end
-	if KeyEvent.is_off(event.prev_meta , accelerate.forward) and
-			KeyEvent.is_on(event.meta , accelerate.forward) then
+	if
+		KeyEvent.is_off(event.prev_meta, accelerate.forward)
+		and KeyEvent.is_on(event.meta, accelerate.forward)
+	then
 		increase()
 	end
-	if KeyEvent.is_off(event.prev_meta , accelerate.backward) and 
-			KeyEvent.is_on(event.meta , accelerate.backward) then
+	if
+		KeyEvent.is_off(event.prev_meta, accelerate.backward)
+		and KeyEvent.is_on(event.meta, accelerate.backward)
+	then
 		decrease()
 	end
 end
@@ -243,5 +252,12 @@ function M.setup()
 		end
 	end
 end
+
+KeyEvent.on_event(function(event)
+	if event.type == KeyEvent.KEY_EVENT_TYPE.REPEAT_END then
+		debug_event(event)
+		transition(STATE.NORMAL)
+	end
+end)
 
 return M
