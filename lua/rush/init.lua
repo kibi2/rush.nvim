@@ -203,7 +203,11 @@ local function process_rush(event)
 		end
 	elseif state == STATE.HOLD2 then
 		if event.nr == 1 then
-			rush_count = rush_count * 2 ^ event.nt
+			if event.nt == 1 then
+				increase()
+			else
+				decrease()
+			end
 		end
 	end
 	if
@@ -233,7 +237,7 @@ end
 function M.key_process(motion)
 	local event = KeyEvent.keymap_event(motion)
 	process_event(event)
-	debug_event(event)
+	-- debug_event(event)
 	return get_new_motion(event)
 end
 
@@ -255,7 +259,7 @@ end
 
 KeyEvent.on_event(function(event)
 	if event.type == KeyEvent.KEY_EVENT_TYPE.REPEAT_END then
-		debug_event(event)
+		-- debug_event(event)
 		transition(STATE.NORMAL)
 	end
 end)
