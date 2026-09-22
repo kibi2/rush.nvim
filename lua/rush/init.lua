@@ -134,22 +134,23 @@ local function remove_metakeymap()
 	end
 end
 
-local function restore_keymaps(map)
-	local rhs = map.callback or map.rhs
-	vim.keymap.set(map.mode, map.lhs, rhs, {
-		buffer = map.bufnr,
-		expr = map.expr == 1,
-		silent = map.silent == 1,
-		noremap = map.noremap == 1,
-		nowait = map.nowait == 1,
-		desc = map.desc,
+local function restore_keymap(bufnr, map)
+	local original = map
+	local rhs = original.callback or original.rhs
+	vim.keymap.set(original.mode, original.lhs, rhs, {
+		buffer = original.buffer == 1 and bufnr or nil,
+		expr = original.expr == 1,
+		silent = original.silent == 1,
+		noremap = original.noremap == 1,
+		nowait = original.nowait == 1,
+		desc = original.desc,
 	})
 end
 
 local function restore_metakeymaps()
 	local bufnr = vim.api.nvim_get_current_buf()
 	for _, map in ipairs(saved_keymaps[bufnr]) do
-		restore_keymaps(map)
+		restore_keymap(bufnr, map)
 	end
 	saved_keymaps[bufnr] = nil
 end
