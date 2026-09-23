@@ -72,8 +72,9 @@ end
 local function increase()
 	if rush_count < 0 then
 		rush_count = math.modf(rush_count / 2)
-	elseif rush_count == 0 then
-		rush_count = 1
+		if rush_count == 0 then
+			rush_count = 1
+		end
 	else
 		rush_count = rush_count * 2
 	end
@@ -82,10 +83,11 @@ end
 local function decrease()
 	if rush_count < 0 then
 		rush_count = rush_count * 2
-	elseif rush_count == 0 then
-		rush_count = -1
 	else
 		rush_count = math.modf(rush_count / 2)
+		if rush_count == 0 then
+			rush_count = -1
+		end
 	end
 end
 
