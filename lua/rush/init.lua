@@ -126,8 +126,8 @@ local function set_metakeymaps()
 	end
 end
 
-local function remove_metakeymap()
-	local bufnr = vim.api.nvim_get_current_buf()
+---@param bufnr integer
+local function remove_metakeymap(bufnr)
 	for _, motion in ipairs(rush_motions) do
 		for _, mode in ipairs(KEYMAP_MODE) do
 			local ok, result =
@@ -153,14 +153,10 @@ local function restore_keymap(bufnr, map)
 	})
 end
 
-local function restore_metakeymaps()
-	if not saved_keymaps then
-		return
+local function restore_metakeymaps(bufnr, maps)
+	for _, map in ipairs(maps) do
+		restore_keymap(bufnr, map)
 	end
-	for _, map in ipairs(saved_keymaps.maps) do
-		restore_keymap(saved_keymaps.bufnr, map)
-	end
-	saved_keymaps = nil
 end
 
 ---@param new_state RushState
@@ -168,8 +164,11 @@ local function transition(new_state)
 	if state == STATE.NORMAL and new_state == STATE.HOLD1 then
 		set_metakeymaps()
 	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
-		remove_metakeymap()
-		restore_metakeymaps()
+		if saved_keymaps then
+			remove_metakeymap(saved_keymaps.bufnr)
+			restore_metakeymaps(saved_keymaps.bufnr, saved_keymaps.maps)
+			saved_keymaps = nil
+		end
 		-- Reset rush count for the next normal motion.
 		rush_count = 1
 	end
@@ -268,6 +267,9 @@ end
 
 KeyEvent.on_event(function(event)
 	if event.type == KeyEvent.KEY_EVENT_TYPE.REPEAT_END then
+		debug_event(event)
+		transition(STATE.NORMAL)
+	elseif event.type == KeyEvent.KEY_EVENT_TYPE.BREAK then
 		debug_event(event)
 		transition(STATE.NORMAL)
 	end
