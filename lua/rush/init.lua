@@ -1,5 +1,6 @@
-local log = require("rush.log")
+local config = require("rush.config")
 local KeyEvent = require("keyevent.keyevent")
+local log = require("rush.log")
 
 local M = {}
 
@@ -28,8 +29,8 @@ local accelerate = {
 
 local state = STATE.NORMAL
 local rush_count = 0
-local saved_keymaps = {}
-local rush_motions
+local saved_keymaps
+local rush_motions = {}
 
 ---@return integer
 local function get_count()
@@ -61,7 +62,7 @@ local function get_new_motion(event)
 end
 
 local function debug_event(event)
-	log.probe(
+	log.debug(
 		"%7s %3s %s",
 		state,
 		get_new_motion(event),
@@ -92,8 +93,7 @@ local function decrease()
 end
 
 ---@param key string
-local function save_keymap(bufnr, mode, key)
-	local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
+local function save_keymap(maps, key)
 	for _, map in ipairs(maps) do
 		if KeyEvent.is_same_key_notation(map.lhs, key) then
 			return map
@@ -104,12 +104,16 @@ end
 ---@param bufnr number
 local function save_keymaps(bufnr)
 	local save = {}
-	for _, key in ipairs(rush_motions) do
-		for _, mode in ipairs(KEYMAP_MODE) do
-			save[#save + 1] = save_keymap(bufnr, mode, key)
+	for _, mode in ipairs(KEYMAP_MODE) do
+		local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
+		for _, key in ipairs(rush_motions) do
+			save[#save + 1] = save_keymap(maps, key)
 		end
 	end
-	saved_keymaps[bufnr] = save
+	saved_keymaps = {
+		bufnr = bufnr,
+		maps = save,
+	}
 end
 
 local function set_metakeymaps()
@@ -129,8 +133,8 @@ local function remove_metakeymap()
 			local ok, result =
 				pcall(vim.keymap.del, mode, motion, { buffer = bufnr })
 			if not ok then
-				log.probe({ mode, motion, bufnr })
-				log.probe(result)
+				log.error({ mode, motion, bufnr })
+				log.error(result)
 			end
 		end
 	end
@@ -150,11 +154,13 @@ local function restore_keymap(bufnr, map)
 end
 
 local function restore_metakeymaps()
-	local bufnr = vim.api.nvim_get_current_buf()
-	for _, map in ipairs(saved_keymaps[bufnr]) do
-		restore_keymap(bufnr, map)
+	if not saved_keymaps then
+		return
 	end
-	saved_keymaps[bufnr] = nil
+	for _, map in ipairs(saved_keymaps.maps) do
+		restore_keymap(saved_keymaps.bufnr, map)
+	end
+	saved_keymaps = nil
 end
 
 ---@param new_state RushState
@@ -164,6 +170,7 @@ local function transition(new_state)
 	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
 		remove_metakeymap()
 		restore_metakeymaps()
+		-- Reset rush count for the next normal motion.
 		rush_count = 1
 	end
 	state = new_state
@@ -243,8 +250,8 @@ function M.key_process(motion)
 	return get_new_motion(event)
 end
 
-function M.setup()
-	-- setup_config(opts or {})
+function M.setup(opts)
+	config.setup(opts or {})
 	for motion, _ in pairs(key_sets) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)
