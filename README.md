@@ -2,17 +2,31 @@
 
 **Time-based key mappings for Neovim.**
 
-`rush.nvim` changes the behavior of repeated motion keys according to the timing of your key presses.
-
-It lets you use a normal key for a normal motion, tap it repeatedly for a different motion, and hold it to repeat that motion at higher speed.
+`rush.nvim` changes the amount of motion based on how you repeat and hold a key.
 
 For example:
 
 ```text
-j               → j
-jj              → j
-jj + hold j     → 4j repeat
-7  + hold j     → 7j repeat
+j                 → j
+jj                → j
+jj + hold j       → 4j repeat
+7 + hold j        → 7j repeat
+```
+
+You can also increase or decrease the motion while holding a key:
+
+```text
+hold j              → 1j, 1j, 1j, ...
+tap j + hold j      → 1j, 1j, 2j, 2j, 2j, ...
+tap j + tap j       → 1j, 1j,
+  + hold j          → 1j, 4j, 4j, ...
+
+tap j + hold j      → 1j, 1j, 2j, 2j, 2j, ...
+  + hold j          → 4j, 4j, 4j, ...
+  + tap j + hold j  → 2j, 2j, 2j, ...
+  + tap j + hold j  → 1j, 1j, 1j, ...
+  + tap j + hold j  → -j, -j, -j, ...
+  + tap j + hold j  → -2j, -2j, -2j, ...
 ```
 
 The idea is simple:
@@ -22,42 +36,132 @@ The idea is simple:
 ## Features
 
 * Time-based key input detection
-* Distinguishes taps, hold start, and key repeats
-* Accelerates repeated motion
-* key repeat前後のtapを組み合わせることで加速、減速できます
-* key repeat中にCtrl, Alt キーをタップすると加速、減速できます(Mac 限定)
-* Works with normal and visual modes
+* Distinguishes clicks, taps, and key repeats
+* Accelerates and decelerates repeated motions
+* Uses tap sequences to change the motion amount
+* Uses Ctrl and Alt as acceleration/deceleration controls on macOS
+* Works in normal and visual modes
 * Configurable timing thresholds
 * Built-in diagnosis command for measuring key repeat timing
 
-## How it works
+## Example
 
-keyevent.nvimを利用して一連のkeyeventの組み合わせに応じてカーソル移動量を変化させます。
-`rush.nvim` watches a small set of motion keys and classifies consecutive inputs by their timing.
+Except for held keys, `rush.nvim` behaves like normal Vim motions.
+
+The following motion keys can be accelerated:
+
+```text
+h j k l w b e
+```
+
+When you hold one of these keys, `rush.nvim` changes the motion amount according to the preceding taps, the repeat sequence, and, on macOS, the state of the modifier keys.
+
+### Preserve a count
+
+A count is preserved throughout a key repeat sequence.
+
+```text
+5 + hold j → 5j, 1j, 5j, ...
+```
+
+In other words, each repeated `j` is effectively replaced with `5j`.
+
+### Increase the motion from the beginning
+
+The number of preceding taps determines the initial motion amount.
+
+```text
+hold j
+→ 1j, 1j, 1j, 1j, 1j, ...
+
+tap j + hold j
+→ 1j, 1j, 2j, 2j, 2j, ...
+
+tap j + tap j + hold j
+→ 1j, 1j, 1j, 4j, 4j, ...
+```
+
+Each additional tap before the hold doubles the motion amount.
+
+### Increase the motion while holding
+
+You can double the motion amount by starting another hold sequence.
+
+```text
+hold j
+→ 1j, 1j, 1j, ...
+
+hold j
+→ 2j, 2j, 2j, ...
+
+hold j
+→ 4j, 4j, 4j, ...
+```
+
+Each additional hold doubles the motion amount.
+
+### Decrease the motion while holding
+
+You can also halve the motion amount.
 
 For example:
 
 ```text
-j
-j
-j  ───────────── hold
-    ↑
-    hold start
-        ↓
-    key repeats
+hold j
+→ 2j, 2j, 2j, ...
+
+tap j + hold j
+→ 1j, 1j, 1j, ...
+
+tap j + hold j
+→ -1j, -1j, -1j, ...
 ```
 
-A typical sequence might become:
+When the motion amount reaches one, another decrease reverses the direction.
+
+Further hold sequences then double the motion amount in the opposite direction.
+
+### Use modifier keys to increase or decrease the motion (macOS only)
+
+On macOS, you can change the motion amount while holding a key by tapping a modifier key.
 
 ```text
-j           → j
-jj          → j
-jj + hold   → 4j repeat
+hold j + tap Ctrl
+→ double the motion amount
+
+hold j + tap Alt
+→ halve the motion amount
 ```
 
-The exact behavior depends on your configured timing thresholds and rush counts.
+Tapping Alt has the same effect as `tap j + hold j`.
 
-Different keys are treated independently. Typing another key starts a new sequence
+> **Note:** On Windows and Ubuntu, pressing a modifier key while a key is repeating may stop the key repeat. macOS does not have this behavior, so modifier-key control is currently supported on macOS only.
+
+You can also change the motion amount with `hold j` or `tap j + hold j`, but `hold j` requires a short wait before the repeat starts.
+
+Using a modifier key avoids this delay, so the motion amount can be changed immediately while the key is repeating.
+
+Modifier keys are also less affected by tap/hold detection errors, since they do not require distinguishing between a tap and a hold.
+
+However, modifier keys may be harder to press depending on the keyboard layout and the position of the motion key.
+
+## How it works
+
+`rush.nvim` uses [`keyevent.nvim`](https://github.com/kibi2/keyevent.nvim) to detect sequences of key events and their timing.
+
+The same motion key can therefore have different meanings depending on how it is typed:
+
+```text
+j
+j
+j ───────────── hold
+              ↓
+          key repeats
+```
+
+The exact behavior depends on the timing thresholds and rush counts configured for your environment.
+
+Different keys are treated independently. Typing another key starts a new sequence.
 
 ## Installation
 
@@ -67,10 +171,10 @@ Different keys are treated independently. Typing another key starts a new sequen
 {
   "kibi2/rush.nvim",
   dependencies = {
-    { 'kibi2/keyevent.nvim' },
+    { "kibi2/keyevent.nvim" },
   },
   config = function()
-    require('rush').setup {}
+    require("rush").setup({})
     require("keyevent").setup({
       interval = {
         delta = 20,
@@ -83,46 +187,23 @@ Different keys are treated independently. Typing another key starts a new sequen
 
 ## Configuration
 
-keyevent.nvim の設定方法については[[keyevent.nvim]](https://github.com/kibi2/keyevent.nvim)を参照してください
+`rush.nvim` uses `keyevent.nvim` for key-event detection.
 
-## Example
+If tap/hold detection is not working reliably, increase the `delta` value.
 
-key hold 以外は普通のvimコマンドとして使えます。
-h, j, k, l, m, w, e, b をholdするとrush.nvimがtap回数、hold回数、metaキーの状態(mac限定)に応じて移動量をかえます。
+If you want slower key presses to still be detected as taps rather than clicks, increase the `tap` value.
 
-### countを持続する
+Both values are specified in milliseconds.
 
-5 hold j とすると5行ずつ下に移動します。つまりhold j でrepeat する"j"はすべて"5j"に置き換わります
-
-### 最初から移動量を増やす
-
-tap j hold j で2行づつ移動します。
-tap j tap j hold j で4行づつ移動します。
-hold j の前のtap jの回数に応じて移動量が倍、倍、になります。
-
-### 途中で移動量を増やす
-
-hold j で1行ずつ移動しますが、さらに続けてhold jで移動量が2倍になります。hold jを繰り返すたびに移動量が倍になります。
-
-### 途中で移動量を減らす
-
-hold j で2行ずつ移動している時にtap jhold jで移動量が半分になります。hold jを繰り返すたびに移動量が半分になります。
-1行ずつ移動している時にtap jhold jで移動方向が逆向きになります。hold jを繰り返すたびに逆向きの移動量が倍になります。
-
-### メタキーを使って途中で移動量を増減する（Mac 限定）
-
-hold j で移動している時にCtrlをタップするごとに移動量が倍に増えます。
-hold j で移動している時にAltをタップするごとに移動量が半分に減ります。tap jhold jと同じ動作をします。
+See the [`keyevent.nvim` README](https://github.com/kibi2/keyevent.nvim) for configuration options.
 
 ## Why?
 
-Vim's motions work extremely well for navigating code and text in a terminal.
+Vim's motions work extremely well for navigating code and text.
 
-But when writing long documents on a large screen, I often find them less convenient.
+However, when working on long Markdown documents or manuscripts on a large screen, I often want to move the cursor much farther than a normal motion provides.
 
-When working on Markdown documents or manuscripts, I frequently want to move the cursor to a completely different part of the screen. Vim has excellent motion commands for this, but they are not always enough for these larger jumps.
-
-As a result, I often end up reaching for the mouse and clicking where I want to go.
+I sometimes end up reaching for the mouse and clicking where I want to go.
 
 `rush.nvim` started from a simple idea:
 
@@ -131,7 +212,7 @@ As a result, I often end up reaching for the mouse and clicking where I want to 
 Instead of reaching for the mouse, I can use the distance I already have in mind and then hold a motion key:
 
 ```text
-7 + hold j  →  7j repeat
+7 + hold j → 7j repeat
 ```
 
 Or, without explicitly entering a count:
@@ -140,7 +221,7 @@ Or, without explicitly entering a count:
 jj + hold j → 4j repeat
 ```
 
-`rush.nvim` explores using the **time axis of key input** as another dimension of Vim's key mappings.
+`rush.nvim` explores the **time axis of key input** as another dimension of Vim's key mappings.
 
 The goal is not to replace Vim's motions, but to make moving around large documents feel more natural when using only the keyboard.
 
@@ -151,16 +232,22 @@ The goal is not to replace Vim's motions, but to make moving around large docume
 
 ## Limitations
 
-`rush.nvim` relies on Neovim's key mapping and input timing.
+`rush.nvim` relies on Neovim's key mappings and input timing.
 
-The exact timing characteristics depend on your:
+The exact timing characteristics depend on:
 
-* operating system
-* keyboard repeat settings
+* your operating system
+* your keyboard
+* your OS key repeat settings
 
-Use `:KeyEvent diagnosis` to determine suitable values for your environment.
+Use:
+
+```vim
+:KeyEvent diagnosis
+```
+
+to measure the key repeat timing on your system and determine suitable values.
 
 ## License
 
 MIT
-
