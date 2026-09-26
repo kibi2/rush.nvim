@@ -2,19 +2,8 @@ local api = vim.api -- Neovim
 local bo = vim.bo
 local fn = vim.fn
 
+local config = require("rush.config")
 local notify = require("rush./notify")
-local config = {
-	log = {
-		level = vim.log.levels.DEBUG,
-		output = "buffer", -- "buffer", "file", "print", "notify"
-		buffer_name = "rush://log",
-		file_name = "/tmp/rush.log",
-		use_timestamp = true,
-		single_line = true,
-		probe = true,
-		monitor = true,
-	},
-}
 
 -- =============================================================================
 

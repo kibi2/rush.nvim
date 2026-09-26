@@ -1,287 +1,278 @@
+local config = require("rush.config")
+local KeyEvent = require("keyevent.keyevent")
 local log = require("rush.log")
-local diagnosis = require("rush.diagnosis")
 
 local M = {}
 
---------------------------------------------------
--- constants
---------------------------------------------------
-
----@enum State
+---@enum RushState
 local STATE = {
-	START = "start",
-	CLICK = "click",
-	TAP = "tap",
-	HOLD = "hold",
+	NORMAL = "normal",
+	HOLD1 = "hold1",
+	HOLD2 = "hold2",
 }
 
----@enum Event
-local EVENT = {
-	CLICK = "click",
-	TAP = "tap",
-	HOLD_START = "hold_start",
-	HOLD_REPEAT = "hold_repeat",
+local KEYMAP_MODE = { "n", "x" }
+
+local key_sets = {
+	h = "l",
+	j = "k",
+	k = "j",
+	l = "h",
+	w = "b",
+	b = "w",
+	e = "ge",
+}
+local accelerate = {
+	forward = KeyEvent.KEY_EVENT_META_MASK.C,
+	backward = KeyEvent.KEY_EVENT_META_MASK.A,
 }
 
-local RUSH_VIM_COUNT = -1
-local RUSH_NONE = 0
+local state = STATE.NORMAL
+local rush_count = 0
+local saved_keymaps
+local rush_motions = {}
 
---------------------------------------------------
--- default config
---------------------------------------------------
-
-local key_set = {
-	"h",
-	"j",
-	"k",
-	"l",
-	"w",
-	"b",
-	"e",
-	"W",
-	"B",
-	"E",
-}
-
-local default_config = {
-	interval = {
-		rep = 95,
-		hold1 = 490,
-		hold2 = 510,
-		tap = 1000,
-	},
-	rush_count = {
-		"vim",
-		2,
-		4,
-		8,
-		16,
-		32,
-		64,
-	},
-}
-
---------------------------------------------------
--- runtime state
---------------------------------------------------
-
-local config
-local interval
-local rush_count
-
-local state = STATE.START
-local prev_key = ""
-local prev_time = 0
-local first_count = 0
-local tap_count = 0
-
---------------------------------------------------
--- config
---------------------------------------------------
-
----@alias RushCountValue "vim"|"none"|integer
-
----@param values RushCountValue[]
----@return any[]
-local function make_rush_count(values)
-	if type(values) ~= "table" then
-		error("rush_count must be a table")
-	end
-
-	local result = {}
-	for _, value in ipairs(values) do
-		if value == "vim" then
-			table.insert(result, RUSH_VIM_COUNT)
-		elseif value == "none" then
-			table.insert(result, RUSH_NONE)
-		elseif
-			type(value) == "number"
-			and value >= 1
-			and value == math.floor(value)
-		then
-			table.insert(result, value)
-		else
-			error(("invalid rush_count value: %s"):format(vim.inspect(value)))
-		end
-	end
-	return result
+---@return integer
+local function get_count()
+	return math.abs(rush_count)
 end
-
----@param opts table
-local function setup_config(opts)
-	config =
-		vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
-	interval = config.interval
-	rush_count = make_rush_count(config.rush_count)
-end
-
---------------------------------------------------
--- event
---------------------------------------------------
-
----@param typed string
----@param delta_t number
----@return Event
-local function get_event(typed, delta_t)
-	if prev_key ~= typed then
-		return EVENT.CLICK
-	elseif delta_t <= interval.rep then
-		return EVENT.HOLD_REPEAT
-	elseif interval.hold1 <= delta_t and delta_t <= interval.hold2 then
-		return EVENT.HOLD_START
-	elseif delta_t <= interval.tap then
-		return EVENT.TAP
-	else
-		return EVENT.CLICK
-	end
-end
-
---------------------------------------------------
--- state
---------------------------------------------------
-
----@param old_state State
-local function state_exit(old_state) end
-
----@param new_state State
-local function state_enter(new_state)
-	if new_state == STATE.CLICK then
-		first_count = vim.v.count
-		tap_count = 1
-	elseif new_state == STATE.TAP then
-		tap_count = tap_count + 1
-	end
-end
-
----@param new_state State
-local function transition(new_state)
-	state_exit(state)
-	state = new_state
-	state_enter(state)
-end
-
---------------------------------------------------
--- motion
---------------------------------------------------
 
 ---@return string
-local function get_count()
-	if state ~= STATE.HOLD then
-		return ""
+local function get_key(event)
+	if rush_count < 0 then
+		return key_sets[event.key]
 	end
-	local count = rush_count[tap_count] or rush_count[#rush_count]
+	return event.key
+end
+
+---@param event KeyEvent
+---@return string
+local function get_new_motion(event)
+	if state == STATE.NORMAL then
+		return event.key
+	end
+	local count = get_count()
 	if count == 0 then
 		return ""
-	elseif count == RUSH_VIM_COUNT then
-		if first_count == 0 then
-			return ""
-		else
-			return tostring(first_count)
-		end
+	elseif count == 1 then
+		return get_key(event)
+	else
+		return count .. get_key(event)
 	end
-	return tostring(count)
 end
 
----@return string
-local function get_new_motion()
-	return get_count() .. prev_key
+local function debug_event(event)
+	log.debug(
+		"%7s %3s %s",
+		state,
+		get_new_motion(event),
+		KeyEvent.to_string(event)
+	)
 end
 
---------------------------------------------------
--- event processing
---------------------------------------------------
+local function increase()
+	if rush_count < 0 then
+		rush_count = math.modf(rush_count / 2)
+		if rush_count == 0 then
+			rush_count = 1
+		end
+	else
+		rush_count = rush_count * 2
+	end
+end
 
----@param event Event
-local function process_event(event)
-	if state == STATE.START then
-		transition(STATE.CLICK)
-	elseif state == STATE.CLICK then
-		if event == EVENT.CLICK then
-			transition(STATE.CLICK)
-		elseif event == EVENT.TAP then
-			transition(STATE.TAP)
-		elseif event == EVENT.HOLD_START then
-			transition(STATE.HOLD)
-		end
-	elseif state == STATE.TAP then
-		if event == EVENT.TAP then
-			transition(STATE.TAP)
-		elseif event == EVENT.HOLD_START then
-			transition(STATE.HOLD)
-		else
-			transition(STATE.CLICK)
-		end
-	elseif state == STATE.HOLD then
-		if event ~= EVENT.HOLD_REPEAT then
-			transition(STATE.CLICK)
+local function decrease()
+	if rush_count < 0 then
+		rush_count = rush_count * 2
+	else
+		rush_count = math.modf(rush_count / 2)
+		if rush_count == 0 then
+			rush_count = -1
 		end
 	end
 end
 
---------------------------------------------------
--- input
---------------------------------------------------
-
----@param typed string
----@return number
-local function key_in(typed)
-	local now = vim.loop.hrtime()
-	local delta_t = (now - prev_time) / 1e6
-	local event = get_event(typed, delta_t)
-	process_event(event)
-	prev_key = typed
-	prev_time = now
-	return delta_t
-end
-
----@param typed string
-local function on_key(_, typed)
-	if #typed == 0 then
-		return
-	end
-	if not vim.tbl_contains(key_set, typed) then
-		key_in(typed)
-	end
-end
-
---------------------------------------------------
--- setup
---------------------------------------------------
-
----@param opts? table
-function M.setup(opts)
-	setup_config(opts or {})
-	for _, motion in ipairs(key_set) do
-		vim.keymap.set({ "n", "x" }, motion, function()
-			local delta_t = key_in(motion)
-			log.debug(
-				"%s\t: %d, %d\t%s [%d]",
-				state,
-				first_count,
-				tap_count,
-				get_new_motion(),
-				delta_t
-			)
-			return get_new_motion()
-		end, { expr = true })
-	end
-	vim.api.nvim_create_user_command("Rush", function(opts)
-		if opts.args == "diagnosis" then
-			diagnosis.start()
-		else
-			vim.notify(
-				"Unknown Rush command: " .. opts.args,
-				vim.log.levels.ERROR
-			)
+---@param key string
+local function save_keymap(maps, key)
+	for _, map in ipairs(maps) do
+		if KeyEvent.is_same_key_notation(map.lhs, key) then
+			return map
 		end
-	end, {
-		nargs = 1,
-		complete = function()
-			return { "diagnosis" }
-		end,
+	end
+end
+
+---@param bufnr number
+local function save_keymaps(bufnr)
+	local save = {}
+	for _, mode in ipairs(KEYMAP_MODE) do
+		local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
+		for _, key in ipairs(rush_motions) do
+			save[#save + 1] = save_keymap(maps, key)
+		end
+	end
+	saved_keymaps = {
+		bufnr = bufnr,
+		maps = save,
+	}
+end
+
+local function set_metakeymaps()
+	local bufnr = vim.api.nvim_get_current_buf()
+	save_keymaps(bufnr)
+	for _, motion in ipairs(rush_motions) do
+		vim.keymap.set(KEYMAP_MODE, motion, function()
+			return M.key_process(motion)
+		end, { expr = true, buffer = bufnr })
+	end
+end
+
+---@param bufnr integer
+local function remove_metakeymap(bufnr)
+	for _, motion in ipairs(rush_motions) do
+		for _, mode in ipairs(KEYMAP_MODE) do
+			local ok, result =
+				pcall(vim.keymap.del, mode, motion, { buffer = bufnr })
+			if not ok then
+				log.error({ mode, motion, bufnr })
+				log.error(result)
+			end
+		end
+	end
+end
+
+local function restore_keymap(bufnr, map)
+	local original = map
+	local rhs = original.callback or original.rhs
+	vim.keymap.set(original.mode, original.lhs, rhs, {
+		buffer = original.buffer == 1 and bufnr or nil,
+		expr = original.expr == 1,
+		silent = original.silent == 1,
+		noremap = original.noremap == 1,
+		nowait = original.nowait == 1,
+		desc = original.desc,
 	})
 end
 
-vim.on_key(on_key)
+local function restore_metakeymaps(bufnr, maps)
+	for _, map in ipairs(maps) do
+		restore_keymap(bufnr, map)
+	end
+end
+
+---@param new_state RushState
+local function transition(new_state)
+	if state == STATE.NORMAL and new_state == STATE.HOLD1 then
+		set_metakeymaps()
+	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
+		if saved_keymaps then
+			remove_metakeymap(saved_keymaps.bufnr)
+			restore_metakeymaps(saved_keymaps.bufnr, saved_keymaps.maps)
+			saved_keymaps = nil
+		end
+		-- Reset rush count for the next normal motion.
+		rush_count = 1
+	end
+	state = new_state
+end
+
+---@param event KeyEvent
+local function check_transition(event)
+	if state == STATE.NORMAL then
+		if event.nr == 2 then
+			transition(STATE.HOLD1)
+		end
+	elseif state == STATE.HOLD1 then
+		if event.nr == 1 then
+			transition(STATE.HOLD2)
+		end
+	end
+	if state ~= STATE.NORMAL then
+		if
+			not KeyEvent.is_same_key(event)
+			or event.type == KeyEvent.KEY_EVENT_TYPE.CLICK
+		then
+			transition(STATE.NORMAL)
+		end
+	end
+end
+
+---@param event KeyEvent
+local function process_normal(event)
+	if not KeyEvent.is_same_key(event) then
+		rush_count = vim.v.count1
+	end
+end
+
+---@param event KeyEvent
+local function process_rush(event)
+	if state == STATE.HOLD1 then
+		if event.nr == 2 then
+			rush_count = rush_count * 2 ^ (event.nt - 1)
+		end
+	elseif state == STATE.HOLD2 then
+		if event.nr == 1 then
+			if event.nt == 1 then
+				increase()
+			else
+				decrease()
+			end
+		end
+	end
+	if
+		KeyEvent.is_off(event.prev_meta, accelerate.forward)
+		and KeyEvent.is_on(event.meta, accelerate.forward)
+	then
+		increase()
+	end
+	if
+		KeyEvent.is_off(event.prev_meta, accelerate.backward)
+		and KeyEvent.is_on(event.meta, accelerate.backward)
+	then
+		decrease()
+	end
+end
+
+---@param event KeyEvent
+local function process_event(event)
+	check_transition(event)
+	if state == STATE.NORMAL then
+		process_normal(event)
+	else
+		process_rush(event)
+	end
+end
+
+function M.key_process(motion)
+	local event = KeyEvent.keymap_event(motion)
+	process_event(event)
+	debug_event(event)
+	return get_new_motion(event)
+end
+
+function M.setup(opts)
+	config.setup(opts or {})
+	for motion, _ in pairs(key_sets) do
+		vim.keymap.set(KEYMAP_MODE, motion, function()
+			return M.key_process(motion)
+		end, { expr = true })
+	end
+	rush_motions = {}
+	for motion, _ in pairs(key_sets) do
+		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
+			local motion = KeyEvent.unparse(motion, meta)
+			rush_motions[#rush_motions + 1] = motion
+		end
+	end
+end
+
+KeyEvent.on_event(function(event)
+	if event.type == KeyEvent.KEY_EVENT_TYPE.REPEAT_END then
+		debug_event(event)
+		transition(STATE.NORMAL)
+	elseif event.type == KeyEvent.KEY_EVENT_TYPE.BREAK then
+		debug_event(event)
+		transition(STATE.NORMAL)
+	end
+end)
 
 return M
