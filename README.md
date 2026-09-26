@@ -23,14 +23,16 @@ The idea is simple:
 
 * Time-based key input detection
 * Distinguishes taps, hold start, and key repeats
-* Accelerates repeated motions
+* Accelerates repeated motion
+* key repeat前後のtapを組み合わせることで加速、減速できます
+* key repeat中にCtrl, Alt キーをタップすると加速、減速できます(Mac 限定)
 * Works with normal and visual modes
 * Configurable timing thresholds
-* Configurable rush counts
 * Built-in diagnosis command for measuring key repeat timing
 
 ## How it works
 
+keyevent.nvimを利用して一連のkeyeventの組み合わせに応じてカーソル移動量を変化させます。
 `rush.nvim` watches a small set of motion keys and classifies consecutive inputs by their timing.
 
 For example:
@@ -63,148 +65,54 @@ Different keys are treated independently. Typing another key starts a new sequen
 
 ```lua
 {
-	"kibi2/rush.nvim",
-	config = function()
-    require('rush').setup {
-      interval = { rep = 100, hold1 = 490, hold2 = 510, tap = 1000, },
-    }
-	end,
+  "kibi2/rush.nvim",
+  dependencies = {
+    { 'kibi2/keyevent.nvim' },
+  },
+  config = function()
+    require('rush').setup {}
+    require("keyevent").setup({
+      interval = {
+        delta = 20,
+        tap = 500,
+      },
+    })
+  end,
 }
 ```
 
 ## Configuration
 
-The default configuration is:
-
-```lua
-require("rush").setup({
-	interval = { rep = 95, hold1 = 490, hold2 = 510, tap = 1000, },
-	rush_count = { "vim", 2, 4, 8, 16, 32, 64, },
-})
-```
-
-### `interval`
-
-These values define how key intervals are interpreted.
-
-```lua
-interval = {
-	rep = 95,
-	hold1 = 490,
-	hold2 = 510,
-	tap = 1000,
-}
-```
-
-All values are in milliseconds.
-
-| Interval | Event |
-| ---------------- | ----------- |
-| `<= rep` | hold repeat |
-| `rep .. hold1` | tap |
-| `hold1 .. hold2` | hold start |
-| `hold2 .. tap` | tap |
-| `> tap` | click |
-
-Different operating systems or key-repeat settings may require different values.
-
-For this reason, `rush.nvim` provides a diagnosis command.
-
-## Diagnosis
-
-Run:
-
-```vim
-:Rush diagnosis
-```
-
-A floating window shows the measured timing while you use your normal buffer.
-
-For example:
-
-```text
-===== Rush diagnosis =====
-
-Press and hold a key several times.
-
-Use a different key for each measurement.
-For example:
-
-  hold j
-  hold k
-  hold j
-  hold k
-
-----------------------------------------
-Detected intervals:
-
-        count   min(ms)   max(ms)
-hold        4       490       503
-repeat     32        82        95
-
-Suggested configuration:
-
-  rep   = 98,
-  hold1 = 487,
-  hold2 = 506,
-
-----------------------------------------
-
-Press <Esc> to close.
-```
-
-The suggested values can be copied directly into your configuration.
-
-During diagnosis, the original buffer remains active, so the measurements are made while using your normal Neovim environment.
-
-Press `<Esc>` to finish.
-
-## `rush_count`
-
-`rush_count` controls the count used for each level of repeated motion.
-
-The default is:
-
-```lua
-rush_count = { "vim", 2, 4, 8, 16, 32, 64, }
-```
-
-`"vim"` uses the count supplied by Vim.
-
-`"none"` disables the count for that level.
-
-For example:
-
-```lua
-rush_count = { "none", 2, 4, 8, 16, 32, 64, }
-```
-
-The number of entries determines how many rush levels are available.
+keyevent.nvim の設定方法については[[keyevent.nvim]](https://github.com/kibi2/keyevent.nvim)を参照してください
 
 ## Example
 
-With:
+key hold 以外は普通のvimコマンドとして使えます。
+h, j, k, l, m, w, e, b をholdするとrush.nvimがtap回数、hold回数、metaキーの状態(mac限定)に応じて移動量をかえます。
 
-```lua
-rush_count = { "vim", 2, 4, 8, 16, 32, 64, }
-```
+### countを持続する
 
-a possible interaction is:
+5 hold j とすると5行ずつ下に移動します。つまりhold j でrepeat する"j"はすべて"5j"に置き換わります
 
-```text
-j               → j
-jj              → j
-jj + hold j     → 4j repeat
-7 + hold j      → 7j repeat
-```
+### 最初から移動量を増やす
 
-The same mechanism can be used for other motion keys such as:
+tap j hold j で2行づつ移動します。
+tap j tap j hold j で4行づつ移動します。
+hold j の前のtap jの回数に応じて移動量が倍、倍、になります。
 
-```text
-h j k l
-w b e
-W B E
-```
+### 途中で移動量を増やす
+
+hold j で1行ずつ移動しますが、さらに続けてhold jで移動量が2倍になります。hold jを繰り返すたびに移動量が倍になります。
+
+### 途中で移動量を減らす
+
+hold j で2行ずつ移動している時にtap jhold jで移動量が半分になります。hold jを繰り返すたびに移動量が半分になります。
+1行ずつ移動している時にtap jhold jで移動方向が逆向きになります。hold jを繰り返すたびに逆向きの移動量が倍になります。
+
+### メタキーを使って途中で移動量を増減する（Mac 限定）
+
+hold j で移動している時にCtrlをタップするごとに移動量が倍に増えます。
+hold j で移動している時にAltをタップするごとに移動量が半分に減ります。tap jhold jと同じ動作をします。
 
 ## Why?
 
@@ -250,7 +158,7 @@ The exact timing characteristics depend on your:
 * operating system
 * keyboard repeat settings
 
-Use `:Rush diagnosis` to determine suitable values for your environment.
+Use `:KeyEvent diagnosis` to determine suitable values for your environment.
 
 ## License
 
