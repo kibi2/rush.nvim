@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - TBD
+
+### Fixed
+
+* Fixed a one-key delay when applying the effect of a held key.
+
 ## [0.2.0] - 2026-09-26
 
 ### Changed
@@ -14,4 +20,12 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.0] - 2026-09-13
 
-Initial release.
+### Added
+
+* Accelerate repeated `h`, `j`, `k`, and `l` motions.
+* Detect key timing to distinguish clicks, taps, and holds.
+* Configure acceleration behavior with `setup()`.
+
+### Changed
+
+* Preserve normal Neovim motions when acceleration is not triggered.

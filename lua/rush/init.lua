@@ -178,7 +178,7 @@ end
 ---@param event KeyEvent
 local function check_transition(event)
 	if state == STATE.NORMAL then
-		if event.nr == 2 then
+		if event.nr == 1 then
 			transition(STATE.HOLD1)
 		end
 	elseif state == STATE.HOLD1 then
@@ -206,7 +206,7 @@ end
 ---@param event KeyEvent
 local function process_rush(event)
 	if state == STATE.HOLD1 then
-		if event.nr == 2 then
+		if event.nr == 1 then
 			rush_count = rush_count * 2 ^ (event.nt - 1)
 		end
 	elseif state == STATE.HOLD2 then
