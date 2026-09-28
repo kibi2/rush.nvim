@@ -7,27 +7,28 @@
 For example:
 
 ```text
-j                 → j
-jj                → j
-jj + hold j       → 4j repeat
-7 + hold j        → 7j repeat
+For example:
+
+j                 → normal Vim behavior
+jj                → normal Vim behavior
+jj + hold j       → hold j is replaced with "4j"
+7 + hold j        → hold j is replaced with "7j"
 ```
 
-You can also increase or decrease the motion while holding a key:
+You can also change the motion amount while holding a key:
 
 ```text
-hold j              → 1j, 1j, 1j, ...
-tap j + hold j      → 1j, 1j, 2j, 2j, 2j, ...
-tap j + tap j       → 1j, 1j,
-  + hold j          → 1j, 4j, 4j, ...
+hold j            → normal Vim behavior
+tap j + hold j    → start with a larger motion
 
-tap j + hold j      → 1j, 1j, 2j, 2j, 2j, ...
-  + hold j          → 4j, 4j, 4j, ...
-  + tap j + hold j  → 2j, 2j, 2j, ...
-  + tap j + hold j  → 1j, 1j, 1j, ...
-  + tap j + hold j  → -j, -j, -j, ...
-  + tap j + hold j  → -2j, -2j, -2j, ...
+while holding j:
+  hold j again    → increase the motion
+  tap j + hold j  → decrease the motion
 ```
+
+The motion can eventually change direction:
+
+j → larger j motions → smaller j motions → -j → larger -j motions
 
 The idea is simple:
 
@@ -61,7 +62,7 @@ When you hold one of these keys, `rush.nvim` changes the motion amount according
 A count is preserved throughout a key repeat sequence.
 
 ```text
-5 + hold j → 5j, 1j, 5j, ...
+5 + hold j               → 5j, 5j, 5j, 5j, 5j, ...
 ```
 
 In other words, each repeated `j` is effectively replaced with `5j`.
@@ -70,32 +71,28 @@ In other words, each repeated `j` is effectively replaced with `5j`.
 
 The number of preceding taps determines the initial motion amount.
 
+Acceleration starts one repeat later because `rush.nvim` needs to distinguish taps from holds.
+
 ```text
-hold j
-→ 1j, 1j, 1j, 1j, 1j, ...
+hold j                   → 1j, 1j, 1j, 1j, 1j, ...
 
-tap j + hold j
-→ 1j, 1j, 2j, 2j, 2j, ...
+tap j + hold j           → 1j, 1j, 2j, 2j, 2j, ...
 
-tap j + tap j + hold j
-→ 1j, 1j, 1j, 4j, 4j, ...
+tap j + tap j + hold j   → 1j, 1j, 1j, 4j, 4j, ...
 ```
 
 Each additional tap before the hold doubles the motion amount.
 
 ### Increase the motion while holding
 
-You can double the motion amount by starting another hold sequence.
+You can double the motion amount by releasing the key and holding it again.
 
 ```text
-hold j
-→ 1j, 1j, 1j, ...
+hold j                   → 1j, 1j, 1j, ...
 
-hold j
-→ 2j, 2j, 2j, ...
+  + hold j               → 1j, 2j, 2j, ...
 
-hold j
-→ 4j, 4j, 4j, ...
+  + hold j               → 2j, 4j, 4j, ...
 ```
 
 Each additional hold doubles the motion amount.
@@ -107,14 +104,11 @@ You can also halve the motion amount.
 For example:
 
 ```text
-hold j
-→ 2j, 2j, 2j, ...
+  + hold j               → 2j, 2j, 2j, 2j, ...
 
-tap j + hold j
-→ 1j, 1j, 1j, ...
+  + tap j + hold j       → 2j, 2j, 1j, 1j, ...
 
-tap j + hold j
-→ -1j, -1j, -1j, ...
+  + tap j + hold j       → 1j, 1j, -1j, -1j, ...
 ```
 
 When the motion amount reaches one, another decrease reverses the direction.
@@ -126,11 +120,9 @@ Further hold sequences then double the motion amount in the opposite direction.
 On macOS, you can change the motion amount while holding a key by tapping a modifier key.
 
 ```text
-hold j + tap Ctrl
-→ double the motion amount
+hold j + tap Ctrl        → double the motion amount
 
-hold j + tap Alt
-→ halve the motion amount
+hold j + tap Alt         → halve the motion amount
 ```
 
 Tapping Alt has the same effect as `tap j + hold j`.
@@ -159,7 +151,7 @@ j ───────────── hold
           key repeats
 ```
 
-The exact behavior depends on the timing thresholds and rush counts configured for your environment.
+The exact behavior depends on the timing thresholds configured for your environment.
 
 Different keys are treated independently. Typing another key starts a new sequence.
 
@@ -212,13 +204,13 @@ I sometimes end up reaching for the mouse and clicking where I want to go.
 Instead of reaching for the mouse, I can use the distance I already have in mind and then hold a motion key:
 
 ```text
-7 + hold j → 7j repeat
+7 + hold j        → 7j repeat
 ```
 
 Or, without explicitly entering a count:
 
 ```text
-jj + hold j → 4j repeat
+jj + hold j       → hold j is replaced with "4j"
 ```
 
 `rush.nvim` explores the **time axis of key input** as another dimension of Vim's key mappings.
