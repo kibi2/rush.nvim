@@ -1,7 +1,7 @@
-local config = require("rush.config")
+local config = require("keyevent.config")
 local KeyEvent = require("keyevent.keyevent")
 local bitflag = require("keyevent.bitflag")
-local log = require("rush.log")
+local log = require("keyevent.log")
 
 local M = {}
 
@@ -25,6 +25,7 @@ local key_sets = {
 	b = "w",
 	e = "ge",
 }
+
 local accelerate = {
 	forward = META.C,
 	backward = META.A,
@@ -65,7 +66,8 @@ local function get_new_motion(event)
 end
 
 local function debug_event(event)
-	log.debug(
+	log.watch(
+		"RSH",
 		"%7s %3s %s",
 		state,
 		get_new_motion(event),
@@ -252,8 +254,7 @@ function M.key_process(motion)
 	return get_new_motion(event)
 end
 
-function M.setup(opts)
-	config.setup(opts or {})
+function M.setup()
 	for motion, _ in pairs(key_sets) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)

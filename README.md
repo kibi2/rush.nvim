@@ -1,6 +1,6 @@
 # rush.nvim
 
-**Time-based key mappings for Neovim.**
+**Control Vim motions with key repeats and holds.**
 
 `rush.nvim` changes the amount of motion based on how you repeat and hold a key.
 
