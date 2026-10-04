@@ -36,8 +36,14 @@ local rush_count = 0
 local saved_keymaps
 local rush_motions = {}
 
+---@param event KeyEvent
 ---@return integer
-local function get_count()
+local function get_count(event)
+	if event.nr == 1 and event.nh == 1 then
+		-- If a tap is mistakenly recognized as a hold,
+		-- it can cause incorrect behavior, so we wait for the next repeat
+		return 1
+	end
 	return math.abs(rush_count)
 end
 
@@ -55,7 +61,7 @@ local function get_new_motion(event)
 	if state == STATE.NORMAL then
 		return event.key
 	end
-	local count = get_count()
+	local count = get_count(event)
 	if count == 0 then
 		return ""
 	elseif count == 1 then
@@ -75,14 +81,16 @@ local function debug_event(event)
 	)
 end
 
-local function increase()
+---@param level integer
+local function increase(level)
+	local scale = 2 ^ level
 	if rush_count < 0 then
-		rush_count = math.modf(rush_count / 2)
+		rush_count = math.modf(rush_count / scale)
 		if rush_count == 0 then
 			rush_count = 1
 		end
 	else
-		rush_count = rush_count * 2
+		rush_count = rush_count * scale
 	end
 end
 
@@ -216,18 +224,14 @@ local function process_rush(event)
 		end
 	elseif state == STATE.HOLD2 then
 		if event.nr == 1 then
-			if event.nt == 1 then
-				increase()
-			else
-				decrease()
-			end
+			increase(event.nt)
 		end
 	end
 	if
 		bitflag.is_off(event.prev_meta, accelerate.forward)
 		and bitflag.is_on(event.meta, accelerate.forward)
 	then
-		increase()
+		increase(1)
 	end
 	if
 		bitflag.is_off(event.prev_meta, accelerate.backward)
@@ -247,11 +251,25 @@ local function process_event(event)
 	end
 end
 
+local function test_output(event, new_key)
+	if vim.g.kibi2_test_mode == 1 then
+		local str = string.format(
+			"%7s %3s %s",
+			state,
+			new_key,
+			KeyEvent.to_string(event)
+		)
+		print(str)
+	end
+end
+
 function M.key_process(motion)
 	local event = KeyEvent.keymap_event(motion)
 	process_event(event)
 	debug_event(event)
-	return get_new_motion(event)
+	local new_motion = get_new_motion(event)
+	test_output(event, new_motion)
+	return new_motion
 end
 
 function M.setup()

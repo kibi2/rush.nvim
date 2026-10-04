@@ -1,4 +1,4 @@
-local common_key = require("common_key")
+local common_key = require("common_rush")
 
 ---@type KeyInfo[]
 local diff_key = {

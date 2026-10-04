@@ -1,5 +1,7 @@
 " ===== common.vim =====
 
+source $KIBI2_REPO_ROOT/tests/common_rush.vim
+
 set noswapfile
 set nobackup
 set nowritebackup
@@ -12,7 +14,6 @@ let g:kibi2_test_mode = 1
 filetype plugin indent on
 
 lua << EOF
-require("luacov")
 local opts = {
   log = {
 		level = vim.log.levels.WARN,
@@ -28,6 +29,7 @@ local opts = {
 	},
 }
 require("keyevent").setup(opts)
+require("rush").setup()
 -- KeyEvent = require("keyevent.keyevent")
 -- Os = require("keyevent.os")
 -- KeyEvent.setup({

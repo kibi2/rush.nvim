@@ -11,5 +11,6 @@ return {
     ".*/.luarocks/.*",
     ".*/site/pack/.*",
     ".*/tests/cases/.*",
+    ".*/keyevent.nvim/.*",
   },
 }

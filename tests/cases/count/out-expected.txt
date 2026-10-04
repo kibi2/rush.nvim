@@ -1,0 +1,25 @@
+--- basic ---
+=== MESSAGE ===
+ 
+--- CASE 6: : count ---
+            src type   (t h  r) key (itv h) seq
+ normal   j map tap    (1 0  0)   j (  0 0) 3j
+  hold1   j map repeat (1 1  1)   j (500 0) 3j↻
+  hold1  3j map repeat (1 1  2)   j (150 0) 3j↻
+  hold1  3j map repeat (1 1  3)   j (150 0) 3j↻
+ normal   j map tap    (1 0  0)   j (  0 0) 1j
+  hold1   j map repeat (1 1  1)   j (500 0) 1j↻
+  hold1   j map repeat (1 1  2)   j (150 0) 1j↻
+  hold1   j map repeat (1 1  3)   j (150 0) 1j↻
+  hold1   j map tap    (1 1  0)   j (300 0) 1j↻j
+ normal   j map tap    (1 0  0)   j (  0 0) 5j
+  hold1   j map repeat (1 1  1)   j (500 0) 5j↻
+  hold1  5j map repeat (1 1  2)   j (150 0) 5j↻
+  hold1  5j map repeat (1 1  3)   j (150 0) 5j↻
+  hold1  5j map tap    (1 1  0)   j (300 0) 5j↻j
+  hold2 10j map repeat (1 2  1)   j (500 0) 5j↻j↻
+  hold2 10j map repeat (1 2  2)   j (150 0) 5j↻j↻
+  hold2 10j map repeat (1 2  3)   j (150 0) 5j↻j↻
+
+=== DISPLAY ===
+

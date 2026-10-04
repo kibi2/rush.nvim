@@ -1,4 +1,4 @@
-local common_key = require("common_key")
+local common_key = require("common_rush")
 
 DELTA = 10
 TAP = 100

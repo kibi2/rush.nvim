@@ -1,0 +1,47 @@
+--- basic ---
+=== MESSAGE ===
+ 
+--- CASE 6: : count ---
+            src type   (t h  r) key (itv h) seq
+ normal   j map click  (1 0  0)   j (900 0) j
+  hold1   j map repeat (1 1  1)   j (500 0) j↻
+  hold1   j map repeat (1 1  2)   j (150 0) j↻
+  hold1   j map repeat (1 1  3)   j (150 0) j↻
+ normal   k map click  (1 0  0)   k (900 0) k
+ normal   k map tap    (2 0  0)   k (300 0) kk
+  hold1   k map repeat (2 1  1)   k (500 0) kk↻
+  hold1  2k map repeat (2 1  2)   k (150 0) kk↻
+  hold1  2k map repeat (2 1  3)   k (150 0) kk↻
+ normal   h map click  (1 0  0)   h (900 0) h
+ normal   h map tap    (2 0  0)   h (300 0) hh
+ normal   h map tap    (3 0  0)   h (300 0) hhh
+  hold1   h map repeat (3 1  1)   h (500 0) hhh↻
+  hold1  4h map repeat (3 1  2)   h (150 0) hhh↻
+  hold1  4h map repeat (3 1  3)   h (150 0) hhh↻
+ normal   l map click  (1 0  0)   l (900 0) l
+ normal   l map tap    (2 0  0)   l (300 0) ll
+ normal   l map tap    (3 0  0)   l (300 0) lll
+ normal   l map tap    (4 0  0)   l (300 0) llll
+  hold1   l map repeat (4 1  1)   l (500 0) llll↻
+  hold1  8l map repeat (4 1  2)   l (150 0) llll↻
+  hold1  8l map repeat (4 1  3)   l (150 0) llll↻
+ normal   w map click  (1 0  0)   w (900 0) w
+ normal   w map tap    (2 0  0)   w (300 0) ww
+ normal   w map tap    (3 0  0)   w (300 0) www
+ normal   w map tap    (4 0  0)   w (300 0) wwww
+ normal   w map tap    (5 0  0)   w (300 0) wwwww
+  hold1   w map repeat (5 1  1)   w (500 0) wwwww↻
+  hold1 16w map repeat (5 1  2)   w (150 0) wwwww↻
+  hold1 16w map repeat (5 1  3)   w (150 0) wwwww↻
+ normal   e map tap    (1 1  0)   e (300 0) wwwww↻e
+ normal   e map tap    (2 1  0)   e (300 0) wwwww↻ee
+ normal   e map tap    (3 1  0)   e (300 0) wwwww↻eee
+ normal   e map tap    (4 1  0)   e (300 0) wwwww↻eeee
+ normal   e map tap    (5 1  0)   e (300 0) wwww↻eeeee
+ normal   e map tap    (6 1  0)   e (300 0) www↻eeeeee
+  hold1 32e map repeat (6 2  1)   e (500 0) ww↻eeeeee↻
+  hold1 32e map repeat (6 2  2)   e (150 0) ww↻eeeeee↻
+  hold1 32e map repeat (6 2  3)   e (150 0) ww↻eeeeee↻
+
+=== DISPLAY ===
+
