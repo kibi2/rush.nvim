@@ -1,11 +1,11 @@
 local config = require("keyevent.config")
-local KeyEvent = require("keyevent.keyevent")
+local keyevent = require("keyevent.keyevent")
 local bitflag = require("keyevent.bitflag")
 local log = require("keyevent.log")
 
 local M = {}
 
-local META = KeyEvent.meta()
+local META = keyevent.meta()
 
 ---@enum RushState
 local STATE = {
@@ -77,24 +77,29 @@ local function debug_event(event)
 		"%7s %3s %s",
 		state,
 		get_new_motion(event),
-		KeyEvent.to_string(event)
+		keyevent.to_string(event)
 	)
 end
 
----@param level integer
-local function increase(level)
-	local scale = 2 ^ level
+local function increase1()
 	if rush_count < 0 then
-		rush_count = math.modf(rush_count / scale)
+		rush_count = math.modf(rush_count / 2)
 		if rush_count == 0 then
 			rush_count = 1
 		end
 	else
-		rush_count = rush_count * scale
+		rush_count = rush_count * 2
 	end
 end
 
-local function decrease()
+---@param level integer
+local function increase(level)
+	for _ = 1, level do
+		increase1()
+	end
+end
+
+local function decrease1()
 	if rush_count < 0 then
 		rush_count = rush_count * 2
 	else
@@ -105,10 +110,17 @@ local function decrease()
 	end
 end
 
+---@param level integer
+local function decrease(level)
+	for _ = 1, level do
+		decrease1()
+	end
+end
+
 ---@param key string
 local function save_keymap(maps, key)
 	for _, map in ipairs(maps) do
-		if KeyEvent.is_same_key_notation(map.lhs, key) then
+		if keyevent.is_same_key_notation(map.lhs, key) then
 			return map
 		end
 	end
@@ -201,8 +213,8 @@ local function check_transition(event)
 	end
 	if state ~= STATE.NORMAL then
 		if
-			not KeyEvent.is_same_key(event)
-			or event.type == KeyEvent.KEY_EVENT_TYPE.CLICK
+			not keyevent.is_same_key(event)
+			or event.type == keyevent.KEY_EVENT_TYPE.CLICK
 		then
 			transition(STATE.NORMAL)
 		end
@@ -211,7 +223,7 @@ end
 
 ---@param event KeyEvent
 local function process_normal(event)
-	if not KeyEvent.is_same_key(event) then
+	if not keyevent.is_same_key(event) then
 		rush_count = vim.v.count1
 	end
 end
@@ -237,7 +249,7 @@ local function process_rush(event)
 		bitflag.is_off(event.prev_meta, accelerate.backward)
 		and bitflag.is_on(event.meta, accelerate.backward)
 	then
-		decrease()
+		decrease(1)
 	end
 end
 
@@ -257,14 +269,14 @@ local function test_output(event, new_key)
 			"%7s %3s %s",
 			state,
 			new_key,
-			KeyEvent.to_string(event)
+			keyevent.to_string(event)
 		)
 		print(str)
 	end
 end
 
 function M.key_process(motion)
-	local event = KeyEvent.keymap_event(motion)
+	local event = keyevent.keymap_event(motion)
 	process_event(event)
 	debug_event(event)
 	local new_motion = get_new_motion(event)
@@ -281,17 +293,17 @@ function M.setup()
 	rush_motions = {}
 	for motion, _ in pairs(key_sets) do
 		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
-			local motion = KeyEvent.unparse(motion, meta)
+			local motion = keyevent.unparse(motion, meta)
 			rush_motions[#rush_motions + 1] = motion
 		end
 	end
 end
 
-KeyEvent.on_event(function(event)
-	if event.type == KeyEvent.KEY_EVENT_TYPE.REPEAT_END then
+keyevent.on_event(function(event)
+	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT_END then
 		debug_event(event)
 		transition(STATE.NORMAL)
-	elseif event.type == KeyEvent.KEY_EVENT_TYPE.BREAK then
+	elseif event.type == keyevent.KEY_EVENT_TYPE.BREAK then
 		debug_event(event)
 		transition(STATE.NORMAL)
 	end
