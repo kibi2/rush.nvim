@@ -1,4 +1,4 @@
-local common_key = require("common_rush")
+local common_rush = require("common_rush")
 
 ---@type KeyInfo[]
 local diff_key = {
@@ -18,4 +18,4 @@ local diff_key = {
 	{ key = "k", interval = CLICK }, -- click k
 }
 
-common_key.run_sequence(diff_key)
+common_rush.run_sequence(diff_key)

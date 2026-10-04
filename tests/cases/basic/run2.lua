@@ -1,4 +1,4 @@
-local common_key = require("common_rush")
+local common_rush = require("common_rush")
 
 ---@type KeyInfo[]
 local meta = {
@@ -18,4 +18,4 @@ local meta = {
 	{ key = "k", interval = CLICK + 50 }, -- click k
 }
 
-common_key.run_sequence(meta)
+common_rush.run_sequence(meta)

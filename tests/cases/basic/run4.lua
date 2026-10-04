@@ -1,4 +1,4 @@
-local common_key = require("common_rush")
+local common_rush = require("common_rush")
 
 DELTA = 10
 TAP = 100
@@ -38,4 +38,4 @@ local tan_tan_ta_ta_tann = {
 	{ key = "j", interval = REPEAT + DELTA + 1 }, -- repeat 7
 }
 
-common_key.run_sequence(tan_tan_ta_ta_tann)
+common_rush.run_sequence(tan_tan_ta_ta_tann)

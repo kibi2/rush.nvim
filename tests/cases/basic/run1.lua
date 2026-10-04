@@ -1,4 +1,4 @@
-local common_key = require("common_rush")
+local common_rush = require("common_rush")
 
 ---@type KeyInfo[]
 local tan_tan_ta_ta_tann = {
@@ -22,6 +22,6 @@ local tan_tan_ta_ta_tann = {
 	{ key = "j", interval = REPEAT }, -- repeat 7
 }
 
-common_key.run_sequence(tan_tan_ta_ta_tann)
+common_rush.run_sequence(tan_tan_ta_ta_tann)
 local events = KeyEvent.get_evcents(2)
 print("hold_time = 500 + 150 * 6 = ", KeyEvent.hold_time(events[1]))
