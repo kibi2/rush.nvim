@@ -1,8 +1,11 @@
 local config = require("rush.config")
 local KeyEvent = require("keyevent.keyevent")
+local bitflag = require("keyevent.bitflag")
 local log = require("rush.log")
 
 local M = {}
+
+local META = KeyEvent.meta()
 
 ---@enum RushState
 local STATE = {
@@ -23,8 +26,8 @@ local key_sets = {
 	e = "ge",
 }
 local accelerate = {
-	forward = KeyEvent.KEY_EVENT_META_MASK.C,
-	backward = KeyEvent.KEY_EVENT_META_MASK.A,
+	forward = META.C,
+	backward = META.A,
 }
 
 local state = STATE.NORMAL
@@ -219,14 +222,14 @@ local function process_rush(event)
 		end
 	end
 	if
-		KeyEvent.is_off(event.prev_meta, accelerate.forward)
-		and KeyEvent.is_on(event.meta, accelerate.forward)
+		bitflag.is_off(event.prev_meta, accelerate.forward)
+		and bitflag.is_on(event.meta, accelerate.forward)
 	then
 		increase()
 	end
 	if
-		KeyEvent.is_off(event.prev_meta, accelerate.backward)
-		and KeyEvent.is_on(event.meta, accelerate.backward)
+		bitflag.is_off(event.prev_meta, accelerate.backward)
+		and bitflag.is_on(event.meta, accelerate.backward)
 	then
 		decrease()
 	end
