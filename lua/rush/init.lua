@@ -9,9 +9,9 @@ local META = keyevent.meta()
 
 ---@enum RushState
 local STATE = {
+	INIT = "init",
 	NORMAL = "normal",
-	HOLD1 = "hold1",
-	HOLD2 = "hold2",
+	REPEAT = "repeat",
 }
 
 local KEYMAP_MODE = { "n", "x" }
@@ -28,8 +28,9 @@ local accelerate = {
 	backward = META.A,
 }
 
-local state = STATE.NORMAL
-local rush_count = 0
+local state = STATE.INIT
+local rush_count = 1
+local rush_level = 0
 local saved_keymaps
 local rush_motions = {}
 
@@ -39,17 +40,17 @@ local function get_count(event)
 	if event.nr == 1 and event.nh == 1 then
 		-- If a tap is mistakenly recognized as a hold,
 		-- it can cause incorrect behavior, so we wait for the next repeat
-		return 1
+		-- return 1
 	end
-	return math.abs(rush_count)
-end
-
----@return string
-local function get_key(event)
-	if rush_count < 0 then
-		return key_pairs[event.key]
+	local scale
+	if rush_level >= 0 then
+		scale = 2 ^ rush_level
+		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
+	elseif rush_level < 0 then
+		scale = -2 ^ (-rush_level - 1)
+		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
 	end
-	return event.key
+	return rush_count * scale
 end
 
 ---@param event KeyEvent
@@ -59,12 +60,15 @@ local function get_new_motion(event)
 		return event.key
 	end
 	local count = get_count(event)
-	if count == 0 then
-		return ""
-	elseif count == 1 then
-		return get_key(event)
+	local key = event.key
+	if count < 0 then
+		key = rush_keys[event.key]
+		count = -count
+	end
+	if count == 1 then
+		return key
 	else
-		return count .. get_key(event)
+		return count .. key
 	end
 end
 
@@ -76,42 +80,6 @@ local function debug_event(event)
 		get_new_motion(event),
 		keyevent.to_string(event)
 	)
-end
-
-local function increase1()
-	if rush_count < 0 then
-		rush_count = math.modf(rush_count / 2)
-		if rush_count == 0 then
-			rush_count = 1
-		end
-	else
-		rush_count = rush_count * 2
-	end
-end
-
----@param level integer
-local function increase(level)
-	for _ = 1, level do
-		increase1()
-	end
-end
-
-local function decrease1()
-	if rush_count < 0 then
-		rush_count = rush_count * 2
-	else
-		rush_count = math.modf(rush_count / 2)
-		if rush_count == 0 then
-			rush_count = -1
-		end
-	end
-end
-
----@param level integer
-local function decrease(level)
-	for _ = 1, level do
-		decrease1()
-	end
 end
 
 ---@param key string
@@ -183,80 +151,77 @@ end
 
 ---@param new_state RushState
 local function transition(new_state)
-	if state == STATE.NORMAL and new_state == STATE.HOLD1 then
+	if state == STATE.NORMAL and new_state == STATE.REPEAT then
 		set_metakeymaps()
-	elseif state ~= STATE.NORMAL and new_state == STATE.NORMAL then
+	elseif state == STATE.REPEAT and new_state ~= STATE.REPEAT then
 		if saved_keymaps then
 			remove_metakeymap(saved_keymaps.bufnr)
 			restore_metakeymaps(saved_keymaps.bufnr, saved_keymaps.maps)
 			saved_keymaps = nil
 		end
-		-- Reset rush count for the next normal motion.
-		rush_count = 1
 	end
+	log.probe(string.format("%s -> %s", state, new_state))
 	state = new_state
 end
 
 ---@param event KeyEvent
-local function check_transition(event)
-	if state == STATE.NORMAL then
-		if event.nr == 1 then
-			transition(STATE.HOLD1)
-		end
-	elseif state == STATE.HOLD1 then
-		if event.nr == 1 then
-			transition(STATE.HOLD2)
-		end
-	end
-	if state ~= STATE.NORMAL then
-		if
-			not keyevent.is_same_key(event)
-			or event.type == keyevent.KEY_EVENT_TYPE.CLICK
-		then
-			transition(STATE.NORMAL)
-		end
-	end
+local function process_init(event)
+	rush_level = 0
+	rush_count = vim.v.count1
+	transition(STATE.NORMAL)
 end
 
 ---@param event KeyEvent
 local function process_normal(event)
-	if not keyevent.is_same_key(event) then
-		rush_count = vim.v.count1
+	if event.type == keyevent.KEY_EVENT_TYPE.CLICK then
+		rush_level = 0
+	elseif event.type == keyevent.KEY_EVENT_TYPE.TAP then
+		if event.nt == 1 then
+			rush_level = 0
+		else
+			rush_level = rush_level + 1
+		end
+	elseif event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
+		transition(STATE.REPEAT)
 	end
 end
 
 ---@param event KeyEvent
-local function process_rush(event)
-	if state == STATE.HOLD1 then
-		if event.nr == 1 then
-			rush_count = rush_count * 2 ^ (event.nt - 1)
+local function process_repeat(event)
+	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
+		if event.meta ~= event.prev_key then
+			if event.meta == accelerate.forward then
+				rush_level = rush_level + 1
+			elseif event.meta == accelerate.backward then
+				rush_level = rush_level - 1
+			end
 		end
-	elseif state == STATE.HOLD2 then
-		if event.nr == 1 then
-			increase(event.nt)
+		return
+	end
+	if event.type == keyevent.KEY_EVENT_TYPE.CLICK then
+		rush_level = 0
+	elseif event.type == keyevent.KEY_EVENT_TYPE.TAP then
+		if event.key == event.prev_key then
+			rush_level = rush_level + 1
+		elseif rush_keys[event.key] == event.prev_key then
+			rush_level = -rush_level
+		else
+			rush_level = 0
 		end
 	end
-	if
-		bitflag.is_off(event.prev_meta, accelerate.forward)
-		and bitflag.is_on(event.meta, accelerate.forward)
-	then
-		increase(1)
-	end
-	if
-		bitflag.is_off(event.prev_meta, accelerate.backward)
-		and bitflag.is_on(event.meta, accelerate.backward)
-	then
-		decrease(1)
-	end
+	transition(STATE.NORMAL)
 end
 
 ---@param event KeyEvent
 local function process_event(event)
-	check_transition(event)
-	if state == STATE.NORMAL then
+	if state == STATE.INIT then
+		process_init(event)
+	elseif state == STATE.NORMAL then
 		process_normal(event)
+	elseif state == STATE.REPEAT then
+		process_repeat(event)
 	else
-		process_rush(event)
+		assert(false, "Invalid state: " .. state)
 	end
 end
 
@@ -300,7 +265,7 @@ local function initialize()
 	keyevent.on_event(function(event)
 		if is_break_or_end(event) or rush_keys[event.key] == nil then
 			debug_event(event)
-			transition(STATE.NORMAL)
+			transition(STATE.INIT)
 		end
 	end)
 end
