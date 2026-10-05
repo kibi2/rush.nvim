@@ -16,16 +16,13 @@ local STATE = {
 
 local KEYMAP_MODE = { "n", "x" }
 
-local key_sets = {
-	h = "l",
-	j = "k",
-	k = "j",
-	l = "h",
-	w = "b",
-	b = "w",
-	e = "ge",
+local key_pairs = {
+	{ "h", "l" },
+	{ "j", "k" },
+	{ "w", "b" },
+	-- {"e", "ge"},
 }
-
+local rush_keys = {}
 local accelerate = {
 	forward = META.C,
 	backward = META.A,
@@ -50,7 +47,7 @@ end
 ---@return string
 local function get_key(event)
 	if rush_count < 0 then
-		return key_sets[event.key]
+		return key_pairs[event.key]
 	end
 	return event.key
 end
@@ -275,6 +272,39 @@ local function test_output(event, new_key)
 	end
 end
 
+---@param event KeyEvent
+---@return boolean
+local function is_break_or_end(event)
+	return event.type == keyevent.KEY_EVENT_TYPE.BREAK
+		or event.type == keyevent.KEY_EVENT_TYPE.REPEAT_END
+end
+
+local function initialize()
+	for _, set in ipairs(key_pairs) do
+		rush_keys[set[1]] = set[2]
+		rush_keys[set[2]] = set[1]
+	end
+	log.probe(rush_keys)
+	for motion, _ in pairs(rush_keys) do
+		vim.keymap.set(KEYMAP_MODE, motion, function()
+			return M.key_process(motion)
+		end, { expr = true })
+	end
+	rush_motions = {}
+	for motion, _ in pairs(rush_keys) do
+		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
+			local motion = keyevent.unparse(motion, meta)
+			rush_motions[#rush_motions + 1] = motion
+		end
+	end
+	keyevent.on_event(function(event)
+		if is_break_or_end(event) or rush_keys[event.key] == nil then
+			debug_event(event)
+			transition(STATE.NORMAL)
+		end
+	end)
+end
+
 function M.key_process(motion)
 	local event = keyevent.keymap_event(motion)
 	process_event(event)
@@ -284,29 +314,8 @@ function M.key_process(motion)
 	return new_motion
 end
 
-function M.setup()
-	for motion, _ in pairs(key_sets) do
-		vim.keymap.set(KEYMAP_MODE, motion, function()
-			return M.key_process(motion)
-		end, { expr = true })
-	end
-	rush_motions = {}
-	for motion, _ in pairs(key_sets) do
-		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
-			local motion = keyevent.unparse(motion, meta)
-			rush_motions[#rush_motions + 1] = motion
-		end
-	end
-end
+function M.setup() end
 
-keyevent.on_event(function(event)
-	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT_END then
-		debug_event(event)
-		transition(STATE.NORMAL)
-	elseif event.type == keyevent.KEY_EVENT_TYPE.BREAK then
-		debug_event(event)
-		transition(STATE.NORMAL)
-	end
-end)
+initialize()
 
 return M
