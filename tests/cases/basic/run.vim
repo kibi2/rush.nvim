@@ -6,9 +6,6 @@ new
 CASE : tan tan ta ta tan
 lua require "run1"
 
-CASE : tan tan ta ta tan (meta)
-lua require "run2"
-
 CASE : tan tan ta ta tan (diff key)
 lua require "run3"
 

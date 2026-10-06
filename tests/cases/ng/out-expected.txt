@@ -7,19 +7,19 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  3)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  4)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  3)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  4)   j (150 0) jj↻
 
 
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map click  (1 0  0)   j (900 0) j
-  hold1   j map repeat (1 1  1)   j (500 0) j↻
-  hold1   j map repeat (1 1  2)   j (150 0) j↻
-  hold1   j map repeat (1 1  3)   j (150 0) j↻
-  hold1   j map repeat (1 1  4)   j (150 0) j↻
+ repeat   j map repeat (1 1  1)   j (500 0) j↻
+ repeat   j map repeat (1 1  2)   j (150 0) j↻
+ repeat   j map repeat (1 1  3)   j (150 0) j↻
+ repeat   j map repeat (1 1  4)   j (150 0) j↻
 
 
             src type   (t h  r) key (itv h) seq
@@ -34,7 +34,7 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map 1-tap  (2 0  0)   j (150 0) jj
  normal   j map 2-tap  (3 0  0)   j (150 0) jjj
@@ -43,8 +43,8 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map 1-tap  (2 0  0)   j (150 0) jj
  
@@ -54,37 +54,37 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  3)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  4)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  3)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  4)   j (150 0) jj↻
 
 
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
-  hold1   j map repeat (1 1  1)   j (500 0) j↻
-  hold2  2j map repeat (1 2  1)   j (500 0) j↻
-  hold2  2j map repeat (1 2  2)   j (150 0) j↻
-  hold2  2j map repeat (1 2  3)   j (150 0) j↻
-  hold2  2j map repeat (1 2  4)   j (150 0) j↻
-
-
-            src type   (t h  r) key (itv h) seq
- normal   j map click  (1 0  0)   j (900 0) j
- normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold2  8j map repeat (2 2  1)   j (500 0) jj↻
-  hold2  8j map repeat (2 2  2)   j (150 0) jj↻
-  hold2  8j map repeat (2 2  3)   j (150 0) jj↻
+ repeat   j map repeat (1 1  1)   j (500 0) j↻
+ repeat   j map repeat (1 2  1)   j (500 0) j↻
+ repeat   j map repeat (1 2  2)   j (150 0) j↻
+ repeat   j map repeat (1 2  3)   j (150 0) j↻
+ repeat   j map repeat (1 2  4)   j (150 0) j↻
 
 
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map tap    (1 1  0)   j (500 0) jj↻j
-  hold1  2j map 1-tap  (2 1  0)   j (150 0) jj↻jj
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat   j map repeat (2 2  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 2  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 2  3)   j (150 0) jj↻
+
+
+            src type   (t h  r) key (itv h) seq
+ normal   j map click  (1 0  0)   j (900 0) j
+ normal   j map tap    (2 0  0)   j (300 0) jj
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ normal   j map tap    (1 1  0)   j (500 0) jj↻j
+ normal   j map 1-tap  (2 1  0)   j (150 0) jj↻jj
  
 --- CASE 12: : tan repeat NG ---
 
@@ -92,19 +92,19 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  3)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  4)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  3)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  4)   j (150 0) jj↻
 
 
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map 1-tap  (2 0  0)   j (150 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  3)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  4)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  3)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  4)   j (150 0) jj↻
 
 
             src type   (t h  r) key (itv h) seq
@@ -121,10 +121,10 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  3)   j (150 0) jj↻
-  hold1  2j map repeat (2 1  4)   j (150 0) jj↻
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  3)   j (150 0) jj↻
+ repeat  2j map repeat (2 1  4)   j (150 0) jj↻
 
 
             src type   (t h  r) key (itv h) seq
@@ -139,19 +139,19 @@
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map tap    (1 1  0)   j (300 0) jj↻j
-  hold1  2j map 1-tap  (2 1  0)   j (150 0) jj↻jj
-  hold1  2j map 2-tap  (3 1  0)   j (150 0) jj↻jjj
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ normal   j map tap    (1 1  0)   j (300 0) jj↻j
+ normal   j map 1-tap  (2 1  0)   j (150 0) jj↻jj
+ normal   j map 2-tap  (3 1  0)   j (150 0) jj↻jjj
 
 
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
  normal   j map tap    (2 0  0)   j (300 0) jj
-  hold1   j map repeat (2 1  1)   j (500 0) jj↻
-  hold1  2j map repeat (2 1  2)   j (150 0) jj↻
-  hold1  2j map tap    (1 1  0)   j (300 0) jj↻j
-  hold1  2j map 1-tap  (2 1  0)   j (150 0) jj↻jj
+ repeat   j map repeat (2 1  1)   j (500 0) jj↻
+ repeat  3j map repeat (2 1  2)   j (150 0) jj↻
+ normal   j map tap    (1 1  0)   j (300 0) jj↻j
+ normal   j map 1-tap  (2 1  0)   j (150 0) jj↻jj
 
 === DISPLAY ===
 
