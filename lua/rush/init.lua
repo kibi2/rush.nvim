@@ -32,6 +32,7 @@ local accelerate = {
 local state = STATE.INIT
 local vim_count = 1
 local level = 0
+local pendding = 0
 local share = false
 
 local saved_keymaps = nil
@@ -45,11 +46,6 @@ end
 ---@param event KeyEvent
 ---@return integer
 local function get_count(event)
-	if event.nr == 1 and event.nh == 1 then
-		-- If a tap is mistakenly recognized as a hold,
-		-- it can cause incorrect behavior, so we wait for the next repeat
-		-- return 1
-	end
 	local scale
 	if level >= 0 then
 		scale = 2 ^ level
@@ -58,7 +54,18 @@ local function get_count(event)
 		scale = -2 ^ (-level - 1)
 		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
 	end
-	return math.max(vim_count, 1) * scale
+	local new_count = math.max(vim_count, 1) * scale
+	if event.nr == 1 then
+		-- If a tap is mistakenly recognized as a hold,
+		-- defer the extra motion until the next repeat.
+		pendding = pendding + (new_count - 1)
+		new_count = 1
+	elseif event.nr == 2 then
+		pendding = pendding + (new_count - 1)
+		new_count = new_count + pendding
+		pendding = 0
+	end
+	return new_count
 end
 
 ---@param event KeyEvent
@@ -177,6 +184,7 @@ end
 ---@param event KeyEvent
 local function process_init(event)
 	level = 0
+	pendding = 0
 	vim_count = vim.v.count
 	transition(STATE.NORMAL)
 end
