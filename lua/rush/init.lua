@@ -177,7 +177,7 @@ local function transition(new_state)
 			saved_keymaps = nil
 		end
 	end
-	log.probe(string.format("%s -> %s", state, new_state))
+	-- log.probe(string.format("%s -> %s", state, new_state))
 	state = new_state
 end
 
@@ -196,10 +196,10 @@ local function process_normal(event)
 		return
 	end
 	if event.nt <= 1 then
-		transition(STATE.INIT)
-		return
+		level = 0
+	else
+		level = level + 1
 	end
-	level = level + 1
 end
 
 ---@param event KeyEvent
@@ -218,12 +218,10 @@ end
 local function process_repeat_tap(event)
 	if keyevent.is_same_key(event) then
 		level = level + 1
-		transition(STATE.NORMAL)
 	elseif is_reverse_key(event) then
 		level = -level
-		transition(STATE.NORMAL)
 	else
-		transition(STATE.INIT)
+		level = 0
 	end
 end
 
@@ -235,9 +233,10 @@ local function process_repeat(event)
 	end
 	if event.type == keyevent.KEY_EVENT_TYPE.TAP then
 		process_repeat_tap(event)
-		return
+	else
+		level = 0
 	end
-	transition(STATE.INIT)
+	transition(STATE.NORMAL)
 end
 
 ---@param event KeyEvent

@@ -17,7 +17,10 @@ local count3 = {
 	{ key = "h", interval = HOLD }, -- "h" wait for the next repeat
 	{ key = "h", interval = REPEAT }, -- "4h"
 	{ key = "h", interval = REPEAT },
-	{ key = "l", interval = CLICK },
+	{ key = "h", interval = TAP },
+	{ key = "h", interval = TAP },
+	{ key = "h", interval = TAP },
+	{ key = "l", interval = TAP },
 	{ key = "l", interval = TAP },
 	{ key = "l", interval = TAP },
 	{ key = "l", interval = TAP },
@@ -32,15 +35,17 @@ local count3 = {
 	{ key = "w", interval = HOLD }, -- "l" wait for the next repeat
 	{ key = "w", interval = REPEAT }, -- "16l"
 	{ key = "w", interval = REPEAT },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = TAP },
-	{ key = "e", interval = HOLD }, -- "l" wait for the next repeat
-	{ key = "e", interval = REPEAT }, -- "32l"
-	{ key = "e", interval = REPEAT },
+	{ key = "b", interval = CLICK },
+	{ key = "b", interval = CLICK },
+	{ key = "b", interval = TAP },
+	{ key = "b", interval = TAP },
+	{ key = "b", interval = TAP },
+	{ key = "b", interval = TAP },
+	{ key = "b", interval = TAP },
+	{ key = "b", interval = HOLD }, -- "l" wait for the next repeat
+	{ key = "b", interval = REPEAT }, -- "32l"
+	{ key = "b", interval = REPEAT },
+	{ key = "b", interval = TAP },
 }
 
 common_key.run_sequence(count3)

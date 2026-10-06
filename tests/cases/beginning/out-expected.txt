@@ -4,44 +4,49 @@
 --- CASE 6: : count ---
             src type   (t h  r) key (itv h) seq
  normal   j map click  (1 0  0)   j (900 0) j
-  hold1   j map repeat (1 1  1)   j (500 0) j↻
-  hold1   j map repeat (1 1  2)   j (150 0) j↻
-  hold1   j map repeat (1 1  3)   j (150 0) j↻
+ repeat   j map repeat (1 1  1)   j (500 0) j↻
+ repeat   j map repeat (1 1  2)   j (150 0) j↻
+ repeat   j map repeat (1 1  3)   j (150 0) j↻
  normal   k map click  (1 0  0)   k (900 0) k
  normal   k map tap    (2 0  0)   k (300 0) kk
-  hold1   k map repeat (2 1  1)   k (500 0) kk↻
-  hold1  2k map repeat (2 1  2)   k (150 0) kk↻
-  hold1  2k map repeat (2 1  3)   k (150 0) kk↻
+ repeat   k map repeat (2 1  1)   k (500 0) kk↻
+ repeat  3k map repeat (2 1  2)   k (150 0) kk↻
+ repeat  2k map repeat (2 1  3)   k (150 0) kk↻
  normal   h map click  (1 0  0)   h (900 0) h
  normal   h map tap    (2 0  0)   h (300 0) hh
  normal   h map tap    (3 0  0)   h (300 0) hhh
-  hold1   h map repeat (3 1  1)   h (500 0) hhh↻
-  hold1  4h map repeat (3 1  2)   h (150 0) hhh↻
-  hold1  4h map repeat (3 1  3)   h (150 0) hhh↻
- normal   l map click  (1 0  0)   l (900 0) l
- normal   l map tap    (2 0  0)   l (300 0) ll
- normal   l map tap    (3 0  0)   l (300 0) lll
- normal   l map tap    (4 0  0)   l (300 0) llll
-  hold1   l map repeat (4 1  1)   l (500 0) llll↻
-  hold1  8l map repeat (4 1  2)   l (150 0) llll↻
-  hold1  8l map repeat (4 1  3)   l (150 0) llll↻
+ repeat   h map repeat (3 1  1)   h (500 0) hhh↻
+ repeat  7h map repeat (3 1  2)   h (150 0) hhh↻
+ repeat  4h map repeat (3 1  3)   h (150 0) hhh↻
+ normal   h map tap    (1 1  0)   h (300 0) hhh↻h
+ normal   h map tap    (2 1  0)   h (300 0) hhh↻hh
+ normal   h map tap    (3 1  0)   h (300 0) hhh↻hhh
+ normal   l map tap    (1 1  0)   l (300 0) hhh↻hhhl
+ normal   l map tap    (2 1  0)   l (300 0) hhh↻hhhll
+ normal   l map tap    (3 1  0)   l (300 0) hhh↻hhhlll
+ normal   l map tap    (4 1  0)   l (300 0) hh↻hhhllll
+ repeat   l map repeat (4 2  1)   l (500 0) h↻hhhllll↻
+ repeat 15l map repeat (4 2  2)   l (150 0) h↻hhhllll↻
+ repeat  8l map repeat (4 2  3)   l (150 0) h↻hhhllll↻
  normal   w map click  (1 0  0)   w (900 0) w
  normal   w map tap    (2 0  0)   w (300 0) ww
  normal   w map tap    (3 0  0)   w (300 0) www
  normal   w map tap    (4 0  0)   w (300 0) wwww
  normal   w map tap    (5 0  0)   w (300 0) wwwww
-  hold1   w map repeat (5 1  1)   w (500 0) wwwww↻
-  hold1 16w map repeat (5 1  2)   w (150 0) wwwww↻
-  hold1 16w map repeat (5 1  3)   w (150 0) wwwww↻
- normal   e map tap    (1 1  0)   e (300 0) wwwww↻e
- normal   e map tap    (2 1  0)   e (300 0) wwwww↻ee
- normal   e map tap    (3 1  0)   e (300 0) wwwww↻eee
- normal   e map tap    (4 1  0)   e (300 0) wwwww↻eeee
- normal   e map tap    (5 1  0)   e (300 0) wwww↻eeeee
- normal   e map tap    (6 1  0)   e (300 0) www↻eeeeee
-  hold1 32e map repeat (6 2  1)   e (500 0) ww↻eeeeee↻
-  hold1 32e map repeat (6 2  2)   e (150 0) ww↻eeeeee↻
-  hold1 32e map repeat (6 2  3)   e (150 0) ww↻eeeeee↻
+ repeat   w map repeat (5 1  1)   w (500 0) wwwww↻
+ repeat 31w map repeat (5 1  2)   w (150 0) wwwww↻
+ repeat 16w map repeat (5 1  3)   w (150 0) wwwww↻
+ normal   b map click  (1 0  0)   b (900 0) b
+ normal   b map click  (1 0  0)   b (900 0) b
+ normal   b map tap    (2 0  0)   b (300 0) bb
+ normal   b map tap    (3 0  0)   b (300 0) bbb
+ normal   b map tap    (4 0  0)   b (300 0) bbbb
+ normal   b map tap    (5 0  0)   b (300 0) bbbbb
+ normal   b map tap    (6 0  0)   b (300 0) bbbbbb
+ repeat   b map repeat (6 1  1)   b (500 0) bbbbbb↻
+ repeat 63b map repeat (6 1  2)   b (150 0) bbbbbb↻
+ repeat 32b map repeat (6 1  3)   b (150 0) bbbbbb↻
+ normal   b map tap    (1 1  0)   b (300 0) bbbbbb↻b
 
 === DISPLAY ===
 
