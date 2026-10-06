@@ -204,7 +204,7 @@ end
 
 ---@param event KeyEvent
 local function process_repeat_meta(event)
-	if event.meta == event.prev_key then
+	if event.meta == event.prev_meta then
 		return
 	end
 	if event.meta == accelerate.forward then

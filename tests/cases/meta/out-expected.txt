@@ -4,22 +4,22 @@
 --- CASE 6: : count ---
             src type   (t h  r) key (itv h) seq
  normal   j map tap    (1 0  0)   j (300 0) j
-  hold1   j map repeat (1 1  1)   j (500 0) j↻
-  hold1   j map repeat (1 1  2)   j (150 0) j↻
-  hold1  2j map repeat (1 1  3) C-j (150 0) j↻
-  hold1  2j map repeat (1 1  4) C-j (150 0) j↻
-  hold1  2j map repeat (1 1  5)   j (150 1) j↻
-  hold1  4j map repeat (1 1  6) C-j (150 1) j↻
-  hold1  4j map repeat (1 1  7)   j (150 1) j↻
-  hold1  2j map repeat (1 1  8) A-j (150 1) j↻
-  hold1  2j map repeat (1 1  9)   j (150 1) j↻
-  hold1   j map repeat (1 1 10) A-j (150 1) j↻
-  hold1   j map repeat (1 1 11) A-j (150 2) j↻
-  hold1   j map repeat (1 1 12)   j (150 2) j↻
-  hold1   k map repeat (1 1 13) A-j (150 2) j↻
-  hold1   k map repeat (1 1 14)   j (150 2) j↻
-  hold1  2k map repeat (1 1 15) A-j (150 2) j↻
-  hold1  2k map repeat (1 1 16)   j (150 2) j↻
+ repeat   j map repeat (1 1  1)   j (500 0) j↻
+ repeat   j map repeat (1 1  2)   j (150 0) j↻
+ repeat  2j map repeat (1 1  3) C-j (150 0) j↻
+ repeat  2j map repeat (1 1  4) C-j (150 0) j↻
+ repeat  2j map repeat (1 1  5)   j (150 1) j↻
+ repeat  4j map repeat (1 1  6) C-j (150 1) j↻
+ repeat  4j map repeat (1 1  7)   j (150 1) j↻
+ repeat  2j map repeat (1 1  8) A-j (150 1) j↻
+ repeat  2j map repeat (1 1  9)   j (150 1) j↻
+ repeat   j map repeat (1 1 10) A-j (150 1) j↻
+ repeat   j map repeat (1 1 11) A-j (150 2) j↻
+ repeat   j map repeat (1 1 12)   j (150 2) j↻
+ repeat   k map repeat (1 1 13) A-j (150 2) j↻
+ repeat   k map repeat (1 1 14)   j (150 2) j↻
+ repeat  2k map repeat (1 1 15) A-j (150 2) j↻
+ repeat  2k map repeat (1 1 16)   j (150 2) j↻
 
 === DISPLAY ===
 
