@@ -32,7 +32,8 @@ local accelerate = {
 local state = STATE.INIT
 local vim_count = 1
 local level = 0
-local share = false
+local share_key = ""
+local share_count = 0
 
 local saved_keymaps = nil
 local rush_motions = {}
@@ -56,16 +57,30 @@ local function get_count(event)
 	return math.max(vim_count, 1) * scale
 end
 
+local function is_share_key(event)
+	if share_count == 0 then
+		return false
+	end
+	return event.key == share_key or event.key == rush_keys[share_key]
+end
+
+local function share_motion(event)
+	if is_share_key(event) then
+		return share_count .. event.key
+	end
+	return event.key
+end
+
 ---@param event KeyEvent
 ---@return string
 local function get_new_motion(event)
 	if state == STATE.NORMAL then
-		return event.key
+		return share_motion(event)
 	end
 	if event.nr == 1 then
 		-- If a tap is mistakenly recognized as a hold,
 		-- defer the extra motion until the next repeat.
-		return event.key
+		return share_motion(event)
 	end
 	local count = get_count(event)
 	local key = event.key
@@ -170,17 +185,46 @@ local function transition(new_state)
 	state = new_state
 end
 
+---@param event KeyEvent|nil
+local function set_share(event)
+	if event then
+		share_key = event.key
+		share_count = vim_count
+	else
+		share_key = ""
+		share_count = 0
+	end
+end
+
 ---@param event KeyEvent
 local function process_init(event)
 	level = 0
-	pendding = 0
 	vim_count = vim.v.count
+	if vim_count ~= 0 and is_share_key(event) then
+		set_share()
+	end
 	transition(STATE.NORMAL)
+end
+
+---@param event KeyEvent
+local function check_share(event)
+	if vim_count == 0 then
+		return
+	end
+	if event.nt ~= 2 then
+		return
+	end
+	local event3 = keyevent.peek(3)
+	if keyevent.is_same_key(event3) or is_reverse_key(event3) then
+		return
+	end
+	set_share(event)
 end
 
 ---@param event KeyEvent
 local function process_normal(event)
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
+		check_share(event)
 		transition(STATE.REPEAT)
 		return
 	end
@@ -281,6 +325,9 @@ local function initialize()
 		if is_break_or_end(event) or rush_keys[event.key] == nil then
 			debug_event(event, " ")
 			transition(STATE.INIT)
+		end
+		if event.key == "<Esc>" then
+			set_share()
 		end
 	end)
 end
