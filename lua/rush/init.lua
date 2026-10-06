@@ -32,7 +32,6 @@ local accelerate = {
 local state = STATE.INIT
 local vim_count = 1
 local level = 0
-local pendding = 0
 local share = false
 
 local saved_keymaps = nil
@@ -54,24 +53,18 @@ local function get_count(event)
 		scale = -2 ^ (-level - 1)
 		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
 	end
-	local new_count = math.max(vim_count, 1) * scale
-	if event.nr == 1 then
-		-- If a tap is mistakenly recognized as a hold,
-		-- defer the extra motion until the next repeat.
-		pendding = pendding + (new_count - 1)
-		new_count = 1
-	elseif event.nr == 2 then
-		pendding = pendding + (new_count - 1)
-		new_count = new_count + pendding
-		pendding = 0
-	end
-	return new_count
+	return math.max(vim_count, 1) * scale
 end
 
 ---@param event KeyEvent
 ---@return string
 local function get_new_motion(event)
 	if state == STATE.NORMAL then
+		return event.key
+	end
+	if event.nr == 1 then
+		-- If a tap is mistakenly recognized as a hold,
+		-- defer the extra motion until the next repeat.
 		return event.key
 	end
 	local count = get_count(event)
@@ -87,14 +80,10 @@ local function get_new_motion(event)
 	end
 end
 
-local function debug_event(event)
-	log.watch(
-		"RSH",
-		"%7s %3s %s",
-		state,
-		get_new_motion(event),
-		keyevent.to_string(event)
-	)
+---@param event KeyEvent
+---@param new_motion string
+local function debug_event(event, new_motion)
+	log.watch("RSH", "%7s %3s %s", state, new_motion, keyevent.to_string(event))
 end
 
 ---@param key string
@@ -290,7 +279,7 @@ local function initialize()
 	end
 	keyevent.on_event(function(event)
 		if is_break_or_end(event) or rush_keys[event.key] == nil then
-			debug_event(event)
+			debug_event(event, " ")
 			transition(STATE.INIT)
 		end
 	end)
@@ -299,9 +288,9 @@ end
 function M.key_process(motion)
 	local event = keyevent.keymap_event(motion)
 	process_event(event)
-	debug_event(event)
 	local new_motion = get_new_motion(event)
 	test_output(event, new_motion)
+	debug_event(event, new_motion)
 	return new_motion
 end
 

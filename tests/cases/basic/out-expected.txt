@@ -10,12 +10,12 @@
  repeat   j map repeat (1 1  4)   j (150 0) j↻
  normal   j map tap    (1 1  0)   j (300 0) j↻j
  repeat   j map repeat (1 2  1)   j (500 0) j↻j↻
- repeat  3j map repeat (1 2  2)   j (150 0) j↻j↻
+ repeat  2j map repeat (1 2  2)   j (150 0) j↻j↻
  normal   j map tap    (1 2  0)   j (300 0) j↻j↻j
  normal   j map tap    (2 2  0)   j (300 0) j↻j↻jj
  normal   j map tap    (3 2  0)   j (300 0) j↻j↻jjj
  repeat   j map repeat (3 3  1)   j (500 0) j↻j↻jjj↻
- repeat 31j map repeat (3 3  2)   j (150 0) j↻j↻jjj↻
+ repeat 16j map repeat (3 3  2)   j (150 0) j↻j↻jjj↻
  repeat 16j map repeat (3 3  3)   j (150 0) j↻j↻jjj↻
  repeat 16j map repeat (3 3  4)   j (150 0) j↻j↻jjj↻
  repeat 16j map repeat (3 3  5)   j (150 1) j↻j↻jjj↻
@@ -43,12 +43,12 @@ hold_time = 500 + 150 * 6 =  1400
  repeat   j map repeat (1 1  4)   j (300 1) j↻
  normal   j map tap    (1 1  0)   j (100 0) j↻j
  repeat   j map repeat (1 2  1)   j (200 0) j↻j↻
- repeat  3j map repeat (1 2  2)   j (300 0) j↻j↻
+ repeat  2j map repeat (1 2  2)   j (300 0) j↻j↻
  normal   j map tap    (1 2  0)   j (100 0) j↻j↻j
  normal   j map tap    (2 2  0)   j (100 0) j↻j↻jj
  normal   j map tap    (3 2  0)   j (100 0) j↻j↻jjj
  repeat   j map repeat (3 3  1)   j (200 0) j↻j↻jjj↻
- repeat 31j map repeat (3 3  2)   j (300 0) j↻j↻jjj↻
+ repeat 16j map repeat (3 3  2)   j (300 0) j↻j↻jjj↻
  repeat 16j map repeat (3 3  3)   j (300 0) j↻j↻jjj↻
  repeat 16j map repeat (3 3  4)   j (300 1) j↻j↻jjj↻
  repeat 16j map repeat (3 3  5)   j (300 1) j↻j↻jjj↻
