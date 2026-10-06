@@ -1,6 +1,4 @@
-local config = require("keyevent.config")
 local keyevent = require("keyevent.keyevent")
-local bitflag = require("keyevent.bitflag")
 local log = require("keyevent.log")
 
 local M = {}
@@ -43,45 +41,45 @@ local function is_reverse_key(event)
 	return rush_keys[event.key] == event.prev_key
 end
 
----@param event KeyEvent
----@return integer
-local function get_count(event)
-	local scale
-	if level >= 0 then
-		scale = 2 ^ level
-		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
-	elseif level < 0 then
-		scale = -2 ^ (-level - 1)
-		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
-	end
-	return math.max(vim_count, 1) * scale
-end
-
 local function is_share_key(event)
-	if share_count == 0 then
-		return false
-	end
 	return event.key == share_key or event.key == rush_keys[share_key]
 end
 
-local function share_motion(event)
+---@param event KeyEvent
+---@return integer
+local function get_count_normal(event)
 	if is_share_key(event) then
-		return share_count .. event.key
+		return share_count == 0 and 1 or share_count
+	else
+		return 1
 	end
-	return event.key
+end
+
+---@param event KeyEvent
+---@return integer
+local function get_count_rush(event)
+	local scale
+	if level >= 0 then
+		scale = 2 ^ level
+	else
+		scale = -2 ^ (-level - 1)
+	end
+	return math.max(vim_count, share_count, 1) * scale
+end
+
+---@param event KeyEvent
+---@return integer
+local function get_count(event)
+	if event.nr <= 1 then
+		return get_count_normal(event)
+	else
+		return get_count_rush(event)
+	end
 end
 
 ---@param event KeyEvent
 ---@return string
 local function get_new_motion(event)
-	if state == STATE.NORMAL then
-		return share_motion(event)
-	end
-	if event.nr == 1 then
-		-- If a tap is mistakenly recognized as a hold,
-		-- defer the extra motion until the next repeat.
-		return share_motion(event)
-	end
 	local count = get_count(event)
 	local key = event.key
 	if count < 0 then
@@ -130,7 +128,7 @@ local function set_metakeymaps()
 	save_keymaps(bufnr)
 	for _, motion in ipairs(rush_motions) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
-			return M.key_process(motion)
+			return M._key_process(motion)
 		end, { expr = true, buffer = bufnr })
 	end
 end
@@ -181,7 +179,6 @@ local function transition(new_state)
 			saved_keymaps = nil
 		end
 	end
-	-- log.probe(string.format("%s -> %s", state, new_state))
 	state = new_state
 end
 
@@ -200,25 +197,31 @@ end
 local function process_init(event)
 	level = 0
 	vim_count = vim.v.count
-	if vim_count ~= 0 and is_share_key(event) then
+	if vim_count ~= 0 then
 		set_share()
 	end
 	transition(STATE.NORMAL)
 end
 
 ---@param event KeyEvent
-local function check_share(event)
+---@return boolean
+local function is_share_event(event)
 	if vim_count == 0 then
-		return
+		return false
 	end
 	if event.nt ~= 2 then
-		return
+		return false
 	end
 	local event3 = keyevent.peek(3)
-	if keyevent.is_same_key(event3) or is_reverse_key(event3) then
-		return
+	return event3.prev_key:match("^%d+$")
+end
+
+---@param event KeyEvent
+local function check_share(event)
+	if is_share_event(event) then
+		level = level - 1
+		set_share(event)
 	end
-	set_share(event)
 end
 
 ---@param event KeyEvent
@@ -304,16 +307,22 @@ local function is_break_or_end(event)
 		or event.type == keyevent.KEY_EVENT_TYPE.REPEAT_END
 end
 
-local function initialize()
+local function initialize_rush_keys()
 	for _, set in ipairs(key_pairs) do
 		rush_keys[set[1]] = set[2]
 		rush_keys[set[2]] = set[1]
 	end
+end
+
+local function initialize_keymaps()
 	for motion, _ in pairs(rush_keys) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
-			return M.key_process(motion)
+			return M._key_process(motion)
 		end, { expr = true })
 	end
+end
+
+local function initialize_rush_motions()
 	rush_motions = {}
 	for motion, _ in pairs(rush_keys) do
 		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
@@ -321,18 +330,28 @@ local function initialize()
 			rush_motions[#rush_motions + 1] = motion
 		end
 	end
+end
+
+local function on_event(event)
+	if is_break_or_end(event) or rush_keys[event.key] == nil then
+		debug_event(event, "")
+		transition(STATE.INIT)
+	end
+	if event.key == "<Esc>" then
+		set_share()
+	end
+end
+
+local function initialize()
+	initialize_rush_keys()
+	initialize_keymaps()
+	initialize_rush_motions()
 	keyevent.on_event(function(event)
-		if is_break_or_end(event) or rush_keys[event.key] == nil then
-			debug_event(event, " ")
-			transition(STATE.INIT)
-		end
-		if event.key == "<Esc>" then
-			set_share()
-		end
+		on_event(event)
 	end)
 end
 
-function M.key_process(motion)
+function M._key_process(motion)
 	local event = keyevent.keymap_event(motion)
 	process_event(event)
 	local new_motion = get_new_motion(event)
