@@ -4,26 +4,26 @@
 --- CASE 6: : count ---
             src type   (t h  r) key (itv h) seq
  normal   j map tap    (1 0  0)   j (  0 0) 3j
-  hold1   j map repeat (1 1  1)   j (500 0) 3j↻
-  hold1  3j map repeat (1 1  2)   j (150 0) 3j↻
-  hold1  3j map repeat (1 1  3)   j (150 0) 3j↻
+ repeat   j map repeat (1 1  1)   j (500 0) 3j↻
+ repeat  5j map repeat (1 1  2)   j (150 0) 3j↻
+ repeat  3j map repeat (1 1  3)   j (150 0) 3j↻
  normal   j map tap    (1 0  0)   j (  0 0) 1j
-  hold1   j map repeat (1 1  1)   j (500 0) 1j↻
-  hold1   j map repeat (1 1  2)   j (150 0) 1j↻
-  hold1   j map repeat (1 1  3)   j (150 0) 1j↻
-  hold1   j map tap    (1 1  0)   j (300 0) 1j↻j
+ repeat   j map repeat (1 1  1)   j (500 0) 1j↻
+ repeat   j map repeat (1 1  2)   j (150 0) 1j↻
+ repeat   j map repeat (1 1  3)   j (150 0) 1j↻
+ normal   j map tap    (1 1  0)   j (300 0) 1j↻j
  normal   k map tap    (1 0  0)   k (  0 0) 5k
-  hold1   k map repeat (1 1  1)   k (500 0) 5k↻
-  hold1  5k map repeat (1 1  2)   k (150 0) 5k↻
-  hold1  5k map repeat (1 1  3)   k (150 0) 5k↻
-  hold1  5k map tap    (1 1  0)   k (300 0) 5k↻k
-  hold2 10k map repeat (1 2  1)   k (500 0) 5k↻k↻
-  hold2 10k map repeat (1 2  2)   k (150 0) 5k↻k↻
-  hold2 10k map repeat (1 2  3)   k (150 0) 5k↻k↻
+ repeat   k map repeat (1 1  1)   k (500 0) 5k↻
+ repeat  9k map repeat (1 1  2)   k (150 0) 5k↻
+ repeat  5k map repeat (1 1  3)   k (150 0) 5k↻
+ normal   k map tap    (1 1  0)   k (300 0) 5k↻k
+ repeat   k map repeat (1 2  1)   k (500 0) 5k↻k↻
+ repeat 19k map repeat (1 2  2)   k (150 0) 5k↻k↻
+ repeat 10k map repeat (1 2  3)   k (150 0) 5k↻k↻
  normal   k map tap    (1 2  0)   k (  0 0) 5k↻k↻6k
-  hold1  6k map repeat (1 3  1)   k (500 0) 5k↻k↻6k↻
-  hold1  6k map repeat (1 3  2)   k (150 0) 5k↻k↻6k↻
-  hold1  6k map repeat (1 3  3)   k (150 0) 5k↻k↻6k↻
+ repeat   k map repeat (1 3  1)   k (500 0) 5k↻k↻6k↻
+ repeat 11k map repeat (1 3  2)   k (150 0) 5k↻k↻6k↻
+ repeat  6k map repeat (1 3  3)   k (150 0) 5k↻k↻6k↻
 
 === DISPLAY ===
 
