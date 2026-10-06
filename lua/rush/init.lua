@@ -28,11 +28,19 @@ local accelerate = {
 	backward = META.A,
 }
 
+-- attribute
 local state = STATE.INIT
-local rush_count = 1
-local rush_level = 0
-local saved_keymaps
+local vim_count = 1
+local level = 0
+local share = false
+
+local saved_keymaps = nil
 local rush_motions = {}
+
+---@param event KeyEvent
+local function is_reverse_key(event)
+	return rush_keys[event.key] == event.prev_key
+end
 
 ---@param event KeyEvent
 ---@return integer
@@ -43,14 +51,14 @@ local function get_count(event)
 		-- return 1
 	end
 	local scale
-	if rush_level >= 0 then
-		scale = 2 ^ rush_level
+	if level >= 0 then
+		scale = 2 ^ level
 		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
-	elseif rush_level < 0 then
-		scale = -2 ^ (-rush_level - 1)
+	elseif level < 0 then
+		scale = -2 ^ (-level - 1)
 		-- log.probe(string.format("rush_level: %d, scale: %d", rush_level, scale))
 	end
-	return rush_count * scale
+	return math.max(vim_count, 1) * scale
 end
 
 ---@param event KeyEvent
@@ -151,9 +159,11 @@ end
 
 ---@param new_state RushState
 local function transition(new_state)
-	if state == STATE.NORMAL and new_state == STATE.REPEAT then
-		set_metakeymaps()
-	elseif state == STATE.REPEAT and new_state ~= STATE.REPEAT then
+	if new_state == STATE.REPEAT then
+		if not saved_keymaps then
+			set_metakeymaps()
+		end
+	else
 		if saved_keymaps then
 			remove_metakeymap(saved_keymaps.bufnr)
 			restore_metakeymaps(saved_keymaps.bufnr, saved_keymaps.maps)
@@ -166,50 +176,60 @@ end
 
 ---@param event KeyEvent
 local function process_init(event)
-	rush_level = 0
-	rush_count = vim.v.count1
+	level = 0
+	vim_count = vim.v.count
 	transition(STATE.NORMAL)
 end
 
 ---@param event KeyEvent
 local function process_normal(event)
-	if event.type == keyevent.KEY_EVENT_TYPE.CLICK then
-		rush_level = 0
-	elseif event.type == keyevent.KEY_EVENT_TYPE.TAP then
-		if event.nt == 1 then
-			rush_level = 0
-		else
-			rush_level = rush_level + 1
-		end
-	elseif event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
+	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
 		transition(STATE.REPEAT)
+		return
+	end
+	if event.nt <= 1 then
+		transition(STATE.INIT)
+		return
+	end
+	level = level + 1
+end
+
+---@param event KeyEvent
+local function process_repeat_meta(event)
+	if event.meta == event.prev_key then
+		return
+	end
+	if event.meta == accelerate.forward then
+		level = level + 1
+	elseif event.meta == accelerate.backward then
+		level = level - 1
+	end
+end
+
+---@param event KeyEvent
+local function process_repeat_tap(event)
+	if keyevent.is_same_key(event) then
+		level = level + 1
+		transition(STATE.NORMAL)
+	elseif is_reverse_key(event) then
+		level = -level
+		transition(STATE.NORMAL)
+	else
+		transition(STATE.INIT)
 	end
 end
 
 ---@param event KeyEvent
 local function process_repeat(event)
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
-		if event.meta ~= event.prev_key then
-			if event.meta == accelerate.forward then
-				rush_level = rush_level + 1
-			elseif event.meta == accelerate.backward then
-				rush_level = rush_level - 1
-			end
-		end
+		process_repeat_meta(event)
 		return
 	end
-	if event.type == keyevent.KEY_EVENT_TYPE.CLICK then
-		rush_level = 0
-	elseif event.type == keyevent.KEY_EVENT_TYPE.TAP then
-		if event.key == event.prev_key then
-			rush_level = rush_level + 1
-		elseif rush_keys[event.key] == event.prev_key then
-			rush_level = -rush_level
-		else
-			rush_level = 0
-		end
+	if event.type == keyevent.KEY_EVENT_TYPE.TAP then
+		process_repeat_tap(event)
+		return
 	end
-	transition(STATE.NORMAL)
+	transition(STATE.INIT)
 end
 
 ---@param event KeyEvent
@@ -249,7 +269,6 @@ local function initialize()
 		rush_keys[set[1]] = set[2]
 		rush_keys[set[2]] = set[1]
 	end
-	log.probe(rush_keys)
 	for motion, _ in pairs(rush_keys) do
 		vim.keymap.set(KEYMAP_MODE, motion, function()
 			return M.key_process(motion)
