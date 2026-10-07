@@ -275,6 +275,17 @@ local function process_repeat(event)
 	transition(STATE.NORMAL)
 end
 
+--  | state | event | next state | action |  |
+--  |  |  |  | level |  |
+--  | INIT | CTR | -> NORMAL | 0 | vim_count |
+--  | NORMAL | R | -> REPEAT | - | share_count |
+--  |  | CT nt<=1 | - | - |  |
+--  |  | T  nt>=2 | - | up |  |
+--  | REPEAT | R | - | - | check_meta |
+--  |  | T+ | -> NORMAL | up |  |
+--  |  | T- | -> NORMAL | reverse |  |
+--  |  | Tx | -> NORMAL | 0 |  |
+--  |  | C | -> NORMAL | 0 |  |
 ---@param event KeyEvent
 local function process_event(event)
 	if state == STATE.INIT then
@@ -365,3 +376,4 @@ function M.setup() end
 initialize()
 
 return M
+
