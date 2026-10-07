@@ -23,7 +23,7 @@ end
 
 ---	@param sequence KeyInfo[]
 function M.run_sequence(sequence)
-	print("            src type   (t h  r) key (itv h) seq")
+	print("            (v l s) src type   (t h  r) key (itv h) seq")
 	for _, keyinfo in ipairs(sequence) do
 		M.advance(keyinfo.interval)
 		local keys =

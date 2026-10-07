@@ -228,6 +228,10 @@ end
 local function process_normal(event)
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
 		check_share(event)
+		if event.ng_repeat ~= 0 then
+			level = level - 1
+			event.nr = event.ng_repeat + 1
+		end
 		transition(STATE.REPEAT)
 		return
 	end
@@ -263,6 +267,12 @@ end
 
 ---@param event KeyEvent
 local function process_repeat(event)
+	if event.ng_repeat ~= 0 then
+		if event.ng_repeat == 1 then
+			level = level + 1
+		end
+		event.nr = event.ng_repeat + 1
+	end
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
 		process_repeat_meta(event)
 		return
@@ -288,6 +298,9 @@ end
 --  |  | C | -> NORMAL | 0 |  |
 ---@param event KeyEvent
 local function process_event(event)
+	if event.ng_repeat ~= 0 then
+		event.type = keyevent.KEY_EVENT_TYPE.REPEAT
+	end
 	if state == STATE.INIT then
 		process_init(event)
 	elseif state == STATE.NORMAL then
@@ -302,9 +315,12 @@ end
 local function test_output(event, new_key)
 	if vim.g.kibi2_test_mode == 1 then
 		local str = string.format(
-			"%7s %3s %s",
+			"%7s %3s (%d %d %d) %s",
 			state,
 			new_key,
+			vim_count,
+			level,
+			share_count,
 			keyevent.to_string(event)
 		)
 		print(str)
@@ -376,4 +392,3 @@ function M.setup() end
 initialize()
 
 return M
-
