@@ -55,14 +55,13 @@ local function get_count_normal(event)
 	end
 end
 
----@param event KeyEvent
 ---@return integer
-local function get_count_rush(event)
+local function get_count_rush()
 	local scale
 	if level >= 0 then
 		scale = 2 ^ level
 	else
-		scale = -2 ^ (-level - 1)
+		scale = -(2 ^ (-level - 1))
 	end
 	return math.max(vim_count, share_count, 1) * scale
 end
@@ -73,7 +72,7 @@ local function get_count(event)
 	if event.nr <= 1 then
 		return get_count_normal(event)
 	else
-		return get_count_rush(event)
+		return get_count_rush()
 	end
 end
 
@@ -113,8 +112,12 @@ local function save_keymaps(bufnr)
 	local save = {}
 	for _, mode in ipairs(KEYMAP_MODE) do
 		local maps = vim.api.nvim_buf_get_keymap(bufnr, mode)
+
 		for _, key in ipairs(rush_motions) do
-			save[#save + 1] = save_keymap(maps, key)
+			local map = save_keymap(maps, key)
+			if map then
+				save[#save + 1] = save_keymap(maps, key)
+			end
 		end
 	end
 	saved_keymaps = {
@@ -193,8 +196,7 @@ local function set_share(event)
 	end
 end
 
----@param event KeyEvent
-local function process_init(event)
+local function process_init()
 	level = 0
 	vim_count = vim.v.count
 	if vim_count ~= 0 then
@@ -213,7 +215,8 @@ local function is_share_event(event)
 		return false
 	end
 	local event3 = keyevent.peek(3)
-	return event3.prev_key:match("^%d+$")
+	local prev_key = event3.prev_key or ""
+	return prev_key:match("^%d+$")
 end
 
 ---@param event KeyEvent
@@ -302,7 +305,7 @@ local function process_event(event)
 		event.type = keyevent.KEY_EVENT_TYPE.REPEAT
 	end
 	if state == STATE.INIT then
-		process_init(event)
+		process_init()
 	elseif state == STATE.NORMAL then
 		process_normal(event)
 	elseif state == STATE.REPEAT then
@@ -353,8 +356,7 @@ local function initialize_rush_motions()
 	rush_motions = {}
 	for motion, _ in pairs(rush_keys) do
 		for _, meta in ipairs({ accelerate.forward, accelerate.backward }) do
-			local motion = keyevent.unparse(motion, meta)
-			rush_motions[#rush_motions + 1] = motion
+			rush_motions[#rush_motions + 1] = keyevent.unparse(motion, meta)
 		end
 	end
 end
