@@ -25,6 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout keyevent.nvim
+        uses: actions/checkout@v4
+        with:
+          repository: kibi2/keyevent.nvim
+          ref: v0.1.1
+          path: .deps/keyevent.nvim
+
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
         with:

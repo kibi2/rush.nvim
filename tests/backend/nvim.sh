@@ -31,6 +31,7 @@ backend_run() {
             NVIM_APPNAME="${NVIM_APPNAME:-}" \
             NVIM_TIRENVI_DEV=1 \
             $TEST_BIN --headless -u NONE -n \
+                --cmd "set rtp+=$ROOT_DIR/.deps/keyevent.nvim" \
                 -c "lua require('luacov')" \
                 -c "source run.vim" \
                 -c "lua require('luacov').save_stats()" \
