@@ -1,0 +1,21 @@
+local common_rush = require("common_rush")
+
+---@type KeyInfo[]
+local meta = {
+	{ key = "j", interval = CLICK }, -- tan
+	{ key = "j", interval = HOLD + DELTA, keymap = true }, -- repeat 1
+	{ key = "J", interval = REPEAT + DELTA }, -- repeat 2
+	{ key = "j", interval = REPEAT - DELTA }, -- repeat 3
+	{ key = "<A-j>", interval = REPEAT }, -- repeat 4
+	{ key = "<D-j>", interval = TAP - DELTA }, -- tan
+	{ key = "<D-j>", interval = HOLD }, -- repeat 1 nh = 2
+	{ key = "<T-j>", interval = REPEAT }, -- repeat 2
+	{ key = "<T-j>", interval = TAP - DELTA }, -- ta
+	{ key = "j", interval = TAP + DELTA }, -- ta
+	{ key = "J", interval = TAP }, -- tan
+	{ key = "<T-j>", interval = HOLD - DELTA }, -- repeat 1 nh = 3
+	{ key = "<M-j>", interval = REPEAT }, -- repeat 2
+	{ key = "k", interval = CLICK + 50 }, -- click k
+}
+
+common_rush.run_sequence(meta)

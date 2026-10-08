@@ -1,0 +1,34 @@
+--- basic ---
+=== MESSAGE ===
+ 
+--- CASE 6: : count ---
+            (v l s) src type   (t h  r) key (itv h) seq
+ normal   j (0 0 0) map click  (1 0  0)   j (900 0) j
+ repeat   j (0 0 0) map repeat (1 1  1)   j (500 0) j↻
+ repeat   j (0 0 0) map repeat (1 1  2)   j (150 0) j↻
+ repeat   j (0 0 0) map repeat (1 1  3)   j (150 0) j↻
+ normal   j (0 1 0) map tap    (1 1  0)   j (300 0) j↻j
+ repeat   j (0 1 0) map repeat (1 2  1)   j (500 0) j↻j↻
+ repeat  2j (0 1 0) map repeat (1 2  2)   j (150 0) j↻j↻
+ repeat  2j (0 1 0) map repeat (1 2  3)   j (150 0) j↻j↻
+ normal   j (0 2 0) map tap    (1 2  0)   j (300 0) j↻j↻j
+ normal   j (0 3 0) map tap    (2 2  0)   j (300 0) j↻j↻jj
+ repeat   j (0 3 0) map repeat (2 3  1)   j (500 0) j↻j↻jj↻
+ repeat  8j (0 3 0) map repeat (2 3  2)   j (150 0) j↻j↻jj↻
+ repeat  8j (0 3 0) map repeat (2 3  3)   j (150 0) j↻j↻jj↻
+ normal   j (0 4 0) map tap    (1 3  0)   j (300 0) j↻j↻jj↻j
+ normal   j (0 5 0) map tap    (2 3  0)   j (300 0) j↻j↻jj↻jj
+ normal   j (0 6 0) map tap    (3 3  0)   j (300 0) j↻j↻jj↻jjj
+ repeat   j (0 6 0) map repeat (3 4  1)   j (500 0) ↻j↻jj↻jjj↻
+ repeat 64j (0 6 0) map repeat (3 4  2)   j (150 0) ↻j↻jj↻jjj↻
+ repeat 64j (0 6 0) map repeat (3 4  3)   j (150 0) ↻j↻jj↻jjj↻
+ normal   j (0 7 0) map tap    (1 4  0)   j (300 0) j↻jj↻jjj↻j
+ normal   j (0 8 0) map tap    (2 4  0)   j (300 0) ↻jj↻jjj↻jj
+ normal   j (0 9 0) map tap    (3 4  0)   j (300 0) jj↻jjj↻jjj
+ normal   j (0 0 0) map tap    (4 4  0)   j (300 0) j↻jjj↻jjjj
+ repeat   j (0 0 0) map repeat (4 5  1)   j (500 0) ↻jjj↻jjjj↻
+ repeat   j (0 0 0) map repeat (4 5  2)   j (150 0) ↻jjj↻jjjj↻
+ repeat   j (0 0 0) map repeat (4 5  3)   j (150 0) ↻jjj↻jjjj↻
+
+=== DISPLAY ===
+
