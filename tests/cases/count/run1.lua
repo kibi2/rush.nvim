@@ -20,6 +20,13 @@ local count3 = {
 	{ key = "k", interval = HOLD },
 	{ key = "k", interval = REPEAT }, -- 20k
 	{ key = "k", interval = REPEAT },
+	{ key = "k", interval = TAP },
+	{ key = "k", interval = TAP },
+	{ key = "k", interval = TAP }, -- reset
+	{ key = "k", interval = TAP },
+	{ key = "k", interval = HOLD },
+	{ key = "k", interval = REPEAT }, -- 20k
+	{ key = "k", interval = REPEAT },
 	{ key = "6k", interval = TAP },
 	{ key = "k", interval = HOLD },
 	{ key = "k", interval = REPEAT }, -- 6k

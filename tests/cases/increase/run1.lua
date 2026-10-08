@@ -15,6 +15,19 @@ local count3 = {
 	{ key = "j", interval = HOLD }, -- "8j"
 	{ key = "j", interval = REPEAT },
 	{ key = "j", interval = REPEAT },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = HOLD }, -- "64j"
+	{ key = "j", interval = REPEAT },
+	{ key = "j", interval = REPEAT },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = TAP },
+	{ key = "j", interval = TAP }, -- reset
+	{ key = "j", interval = HOLD }, -- "1j"
+	{ key = "j", interval = REPEAT },
+	{ key = "j", interval = REPEAT },
 }
 
 common_key.run_sequence(count3)

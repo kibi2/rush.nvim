@@ -78,21 +78,18 @@ In other words, each repeated `j` is effectively replaced with `5j`.
 
 ### Increase the motion from the beginning
 
-The number of preceding taps determines the motion amount for subsequent repeats.
-
-Acceleration starts one repeat later because `rush.nvim` needs to distinguish taps from holds.
+The number of consecutive taps determines the motion amount for subsequent repeats.
 
 ```text
-hold j                   → 1j repeat
-
-tap j + hold j           → 2j repeat
-
-tap j + tap j + hold j   → 4j repeat
+hold j                    → 1j repeat
+tap j + hold j            → 2j repeat
+tap j + tap j + hold j    → 4j repeat
+tap j + tap j + tap j + hold j → 1j repeat
 ```
 
 The initial `j` of a sequence is always executed as `1j`; the increased motion applies to subsequent repeats.
 
-Each additional tap before the hold doubles the motion amount.
+Each additional tap doubles the motion amount, up to 4×. A third consecutive tap resets the acceleration.
 
 ### Increase the motion while holding
 

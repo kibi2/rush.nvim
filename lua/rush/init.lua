@@ -185,22 +185,23 @@ local function transition(new_state)
 	state = new_state
 end
 
----@param event KeyEvent|nil
+---@param event KeyEvent
 local function set_share(event)
-	if event then
-		share_key = event.key
-		share_count = vim_count
-	else
-		share_key = ""
-		share_count = 0
-	end
+	share_key = event.key
+	share_count = vim_count
+	vim_count = 0
+end
+
+local function clear_share()
+	share_key = ""
+	share_count = 0
 end
 
 local function process_init()
 	level = 0
 	vim_count = vim.v.count
 	if vim_count ~= 0 then
-		set_share()
+		clear_share()
 	end
 	transition(STATE.NORMAL)
 end
@@ -238,10 +239,11 @@ local function process_normal(event)
 		transition(STATE.REPEAT)
 		return
 	end
-	if event.nt <= 1 then
-		level = 0
-	else
+	if 2 <= event.nt and event.nt <= 3 then
 		level = level + 1
+	else
+		level = 0
+		vim_count = 0
 	end
 end
 
@@ -367,7 +369,7 @@ local function on_event(event)
 		transition(STATE.INIT)
 	end
 	if event.key == "<Esc>" then
-		set_share()
+		clear_share()
 	end
 end
 

@@ -5,23 +5,23 @@
             (v l s) src type   (t h  r) key (itv h) seq
  normal   j (3 0 0) map tap    (1 0  0)   j (  0 0) 3j
  normal   j (3 1 0) map tap    (2 0  0)   j (300 0) 3jj
- repeat  3j (3 0 3) map repeat (2 1  1)   j (500 0) 3jj↻
- repeat  3j (3 0 3) map repeat (2 1  2)   j (150 0) 3jj↻
- repeat  3j (3 0 3) map repeat (2 1  3)   j (150 0) 3jj↻
- normal  3k (3 0 3) map tap    (1 1  0)   k (300 0) 3jj↻k
- normal   h (3 0 3) map click  (1 0  0)   h (900 0) h
- normal  3k (3 0 3) map click  (1 0  0)   k (900 0) k
- normal  3k (3 1 3) map tap    (2 0  0)   k (300 0) kk
- repeat  3k (3 1 3) map repeat (2 1  1)   k (500 0) kk↻
- repeat  6k (3 1 3) map repeat (2 1  2)   k (150 0) kk↻
- repeat  6k (3 1 3) map repeat (2 1  3)   k (150 0) kk↻
+ repeat  3j (0 0 3) map repeat (2 1  1)   j (500 0) 3jj↻
+ repeat  3j (0 0 3) map repeat (2 1  2)   j (150 0) 3jj↻
+ repeat  3j (0 0 3) map repeat (2 1  3)   j (150 0) 3jj↻
+ normal  3k (0 0 3) map tap    (1 1  0)   k (300 0) 3jj↻k
+ normal   h (0 0 3) map click  (1 0  0)   h (900 0) h
+ normal  3k (0 0 3) map click  (1 0  0)   k (900 0) k
+ normal  3k (0 1 3) map tap    (2 0  0)   k (300 0) kk
+ repeat  3k (0 1 3) map repeat (2 1  1)   k (500 0) kk↻
+ repeat  6k (0 1 3) map repeat (2 1  2)   k (150 0) kk↻
+ repeat  6k (0 1 3) map repeat (2 1  3)   k (150 0) kk↻
  normal   l (1 0 0) map tap    (1 0  0)   l (  0 0) 1l
- normal   j (1 0 0) map click  (1 0  0)   j (900 0) j
+ normal   j (0 0 0) map click  (1 0  0)   j (900 0) j
  normal   w (13 0 0) map tap    (1 0  0)   w (  0 0) j1w
  normal   w (13 1 0) map tap    (2 0  0)   w (300 0) j1ww
- repeat 13w (13 0 13) map repeat (2 1  1)   w (500 0) j1ww↻
- repeat 13w (13 0 13) map repeat (2 1  2)   w (150 0) j1ww↻
- normal 13b (13 0 13) map tap    (1 1  0)   b (150 0) j1ww↻b
+ repeat 13w (0 0 13) map repeat (2 1  1)   w (500 0) j1ww↻
+ repeat 13w (0 0 13) map repeat (2 1  2)   w (150 0) j1ww↻
+ normal 13b (0 0 13) map tap    (1 1  0)   b (150 0) j1ww↻b
  normal   w (0 0 0) map tap    (1 1  0)   w (300 0) j1ww↻bw
 
 === DISPLAY ===

@@ -30,12 +30,15 @@
  repeat  4k (0 2 0) map repeat (2 6  2)   k (150 0) ↻k↻k↻k↻kk↻
  repeat  4k (0 2 0) map repeat (2 6  3)   k (150 0) ↻k↻k↻k↻kk↻
  normal   j (0 -2 0) map tap    (1 6  0)   j (300 0) k↻k↻k↻kk↻j
- normal   j (0 -1 0) map tap    (2 6  0)   j (300 0) ↻k↻k↻kk↻jj
- normal   j (0 0 0) map tap    (3 6  0)   j (300 0) k↻k↻kk↻jjj
- normal   j (0 1 0) map tap    (4 6  0)   j (300 0) ↻k↻kk↻jjjj
- repeat   j (0 1 0) map repeat (4 7  1)   j (500 0) k↻kk↻jjjj↻
- repeat  2j (0 1 0) map repeat (4 7  2)   j (150 0) k↻kk↻jjjj↻
- repeat  2j (0 1 0) map repeat (4 7  3)   j (150 0) k↻kk↻jjjj↻
+ repeat   j (0 -2 0) map repeat (1 7  1)   j (500 0) ↻k↻k↻kk↻j↻
+ repeat  2k (0 -2 0) map repeat (1 7  2)   j (150 0) ↻k↻k↻kk↻j↻
+ repeat  2k (0 -2 0) map repeat (1 7  3)   j (150 0) ↻k↻k↻kk↻j↻
+ normal   j (0 -1 0) map tap    (1 7  0)   j (300 0) k↻k↻kk↻j↻j
+ normal   j (0 0 0) map tap    (2 7  0)   j (300 0) ↻k↻kk↻j↻jj
+ normal   j (0 1 0) map tap    (3 7  0)   j (300 0) k↻kk↻j↻jjj
+ repeat   j (0 1 0) map repeat (3 8  1)   j (500 0) ↻kk↻j↻jjj↻
+ repeat  2j (0 1 0) map repeat (3 8  2)   j (150 0) ↻kk↻j↻jjj↻
+ repeat  2j (0 1 0) map repeat (3 8  3)   j (150 0) ↻kk↻j↻jjj↻
 
 === DISPLAY ===
 

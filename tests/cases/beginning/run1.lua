@@ -23,27 +23,25 @@ local count3 = {
 	{ key = "l", interval = TAP },
 	{ key = "l", interval = TAP },
 	{ key = "l", interval = TAP },
-	{ key = "l", interval = TAP },
+	{ key = "l", interval = TAP }, -- reset
 	{ key = "l", interval = HOLD }, -- "l" wait for the next repeat
-	{ key = "l", interval = REPEAT }, -- "8l"
+	{ key = "l", interval = REPEAT }, -- "1l" reset
 	{ key = "l", interval = REPEAT },
 	{ key = "w", interval = CLICK },
 	{ key = "w", interval = TAP },
 	{ key = "w", interval = TAP },
-	{ key = "w", interval = TAP },
-	{ key = "w", interval = TAP },
-	{ key = "w", interval = HOLD }, -- "l" wait for the next repeat
-	{ key = "w", interval = REPEAT }, -- "16l"
+	{ key = "w", interval = HOLD }, -- "w" wait for the next repeat
+	{ key = "w", interval = REPEAT }, -- "4w"
 	{ key = "w", interval = REPEAT },
 	{ key = "b", interval = CLICK },
 	{ key = "b", interval = CLICK },
 	{ key = "b", interval = TAP },
 	{ key = "b", interval = TAP },
+	{ key = "b", interval = TAP }, -- reset
 	{ key = "b", interval = TAP },
 	{ key = "b", interval = TAP },
-	{ key = "b", interval = TAP },
-	{ key = "b", interval = HOLD }, -- "l" wait for the next repeat
-	{ key = "b", interval = REPEAT }, -- "32l"
+	{ key = "b", interval = HOLD }, -- "b" wait for the next repeat
+	{ key = "b", interval = REPEAT }, -- "1b"
 	{ key = "b", interval = REPEAT },
 	{ key = "b", interval = TAP },
 }

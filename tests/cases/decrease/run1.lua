@@ -29,6 +29,9 @@ local count3 = {
 	{ key = "k", interval = REPEAT },
 	{ key = "k", interval = REPEAT },
 	{ key = "j", interval = TAP },
+	{ key = "j", interval = HOLD }, -- "2k"
+	{ key = "j", interval = REPEAT },
+	{ key = "j", interval = REPEAT },
 	{ key = "j", interval = TAP },
 	{ key = "j", interval = TAP },
 	{ key = "j", interval = TAP },
