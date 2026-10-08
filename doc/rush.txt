@@ -1,0 +1,359 @@
+*rush.txt*	Control Vim motion amount with key repeats and holds
+
+RUSH.NVIM
+
+Control Vim motion amount with key repeats and holds.
+
+==============================================================================
+CONTENTS						*rush-contents*
+
+Introduction						|rush-introduction|
+Usage							|rush-usage|
+Motion keys						|rush-motion-keys|
+Motion amount						|rush-motion-amount|
+Acceleration and deceleration			|rush-acceleration|
+Shared count						|rush-shared-count|
+Modes							|rush-modes|
+Configuration						|rush-configuration|
+keyevent.nvim						|rush-keyevent|
+Diagnosis						|rush-diagnosis|
+Limitations						|rush-limitations|
+Installation						|rush-installation|
+License							|rush-license|
+
+==============================================================================
+INTRODUCTION						*rush-introduction*
+
+*rush* changes the amount of a Vim motion according to key timing.
+
+Instead of repeatedly pressing a motion key:
+
+>
+	j j j j j j j j
+<
+
+you can hold the key and let rush increase the motion amount:
+
+>
+	j  ->  2j  ->  4j  ->  8j ...
+<
+
+This is useful when moving through a buffer where the required distance
+varies widely. Short movements can still be made with ordinary Vim keys,
+while longer movements can be performed by holding a key.
+
+rush does not replace Vim's motion commands. It changes the amount of
+configured motions based on key repeats and holds.
+
+==============================================================================
+USAGE							*rush-usage*
+
+After installing rush, call `setup()`:
+
+>
+	require("rush").setup()
+<
+
+The default configuration is intended to work with common Vim cursor-motion
+keys.
+
+For example, in Normal mode:
+
+>
+	j
+<
+
+moves normally.
+
+Holding `j` changes the repeated motion to larger jumps:
+
+>
+	j  ->  2j  ->  4j  ->  8j ...
+<
+
+The exact timing depends on the keyboard repeat characteristics detected by
+|keyevent.nvim|.
+
+A normal key press remains a normal Vim motion. rush only changes the motion
+amount when key timing indicates a repeated or held key.
+
+==============================================================================
+MOTION KEYS						*rush-motion-keys*
+
+The default motion pairs are:
+
+>
+	h  <->  l
+	j  <->  k
+	w  <->  b
+<
+
+The paired keys represent opposite directions.
+
+The `e` / `ge` pair may be configured separately.
+
+rush currently operates in Normal and Visual modes.
+
+							*rush-motion-pairs*
+
+A motion pair consists of two keys that move in opposite directions.
+Acceleration and deceleration can therefore be applied relative to the
+currently active direction.
+
+==============================================================================
+MOTION AMOUNT						*rush-motion-amount*
+
+rush treats a repeated motion as a single motion whose amount changes over
+time.
+
+For example, holding `j` can produce:
+
+>
+	1j  2j  4j  8j  16j ...
+<
+
+The important property is that the motion amount changes between repeat
+events, rather than rush literally sending a sequence of ordinary Vim
+commands.
+
+This keeps the behavior close to Vim's normal motion semantics.
+
+A plain tap is handled as an ordinary Vim motion. Hold detection requires
+the repeat interval to be observed, so acceleration begins only after the
+key has been recognized as a hold.
+
+							*rush-reverse*
+
+Pressing the opposite motion key while a motion is being repeated changes
+the direction and can reduce the current motion amount.
+
+For example, when repeatedly moving down with `j`, pressing `k` can change
+the motion to a smaller upward movement instead of behaving like an
+unrelated new command.
+
+The motion amount is kept constant during a repeat burst. Outside the repeat
+interval, normal Vim key behavior is restored.
+
+==============================================================================
+ACCELERATION AND DECELERATION				*rush-acceleration*
+
+rush supports both acceleration and deceleration.
+
+Holding a motion key accelerates the motion:
+
+>
+	j  ->  2j  ->  4j  ->  8j ...
+<
+
+The opposite motion key can reduce the amount and reverse the direction.
+
+Modifier keys can also be used for explicit acceleration or deceleration.
+
+By default, Ctrl is used for acceleration and Alt for deceleration:
+
+>
+	Ctrl + hold j		accelerate
+	Alt  + hold j		decelerate
+<
+
+On macOS, these modifier-based operations are particularly useful because
+they provide explicit control over acceleration and deceleration.
+
+The modifier behavior can be configured. Users who prefer Ctrl for both
+directions can decelerate a held `j` by holding the opposite motion key:
+
+>
+	hold j + hold k + Ctrl
+<
+
+Alt remains available as a simpler deceleration mechanism:
+
+>
+	hold j + Alt
+<
+
+These approaches have different keyboard and platform trade-offs.
+
+==============================================================================
+SHARED COUNT						*rush-shared-count*
+
+rush can share the current motion count while repeated motion keys are being
+used.
+
+This makes a sequence of related motion keys behave as one continuous motion
+operation rather than starting a new count for every key.
+
+For example, changing direction during a repeated motion can preserve the
+current motion amount and then reduce it according to the new direction.
+
+The shared-count behavior is intended for advanced use. By default,
+<Esc> exits shared-count mode.
+
+An option can be used to disable the <Esc> exit for users who prefer to keep
+the shared-count state active.
+
+==============================================================================
+MODES							*rush-modes*
+
+rush uses the following logical states:
+
+Normal Vim input ~
+
+	A normal key press behaves like the corresponding Vim motion.
+
+Repeat ~
+
+	A key is being repeated within the keyboard repeat interval. The current
+	motion amount can be changed during this state.
+
+Hold ~
+
+	A sufficiently long key press is recognized as a hold. Acceleration is
+	applied on subsequent repeat events.
+
+A buffer change terminates the current key-event sequence. This prevents a
+held or repeated motion from continuing across buffers.
+
+==============================================================================
+CONFIGURATION						*rush-configuration*
+
+rush is configured with `require("rush").setup()`.
+
+Example:
+
+>
+	require("rush").setup({
+		-- configuration
+	})
+<
+
+							*rush-key-pairs*
+
+The motion pairs can be configured with `key_pairs`.
+
+Example:
+
+>
+	require("rush").setup({
+		key_pairs = {
+			{ "h", "l" },
+			{ "j", "k" },
+			{ "w", "b" },
+		},
+	})
+<
+
+							*rush-accelerate-option*
+
+The acceleration and deceleration modifiers can be configured with the
+`accelerate` setting.
+
+The default direction is:
+
+>
+	accelerate = {
+		forward = META.C,
+		backward = META.A,
+	}
+<
+
+where Ctrl is used for acceleration and Alt for deceleration.
+
+See the source documentation and release notes for configuration options
+introduced in newer versions.
+
+Timing-related configuration belongs to |keyevent.nvim| rather than rush.
+
+==============================================================================
+KEYEVENT.NVIM						*rush-keyevent*
+
+rush uses |keyevent.nvim| to recognize key presses, holds, repeats, intervals,
+and modifier keys.
+
+`keyevent.nvim` separates physical key-event detection from rush's motion
+logic.
+
+This separation allows rush to concentrate on deciding how the Vim motion
+amount should change.
+
+The keyboard timing thresholds can be adjusted through `keyevent.nvim`.
+
+For example:
+
+>
+	require("keyevent").setup({
+		interval = {
+			delta = 20,
+			tap = 500,
+		},
+	})
+<
+
+`delta` controls the tolerance used when determining repeat intervals.
+`tap` controls the maximum interval considered a tap.
+
+If hold/tap detection is unreliable on a particular system, use
+|rush-diagnosis| to inspect the detected keyboard timing before changing
+these values.
+
+==============================================================================
+DIAGNOSIS						*rush-diagnosis*
+
+`keyevent.nvim` provides a diagnosis command:
+
+>
+	:KeyEvent diagnosis
+<
+
+Use it when rush does not correctly distinguish taps, holds, or repeats.
+
+The diagnosis output shows the timing information observed by
+`keyevent.nvim`. Keyboard repeat behavior varies between operating systems,
+terminal environments, and keyboard configurations.
+
+On systems where the keyboard repeat timing cannot be queried directly,
+`keyevent.nvim` estimates the timing statistically.
+
+==============================================================================
+LIMITATIONS						*rush-limitations*
+
+rush depends on keyboard repeat events. The exact behavior therefore depends
+on the operating system, terminal, and keyboard settings.
+
+In particular, modifier keys may affect keyboard repeat behavior differently
+on different platforms. On some Windows and Linux configurations, holding a
+modifier can stop ordinary keyboard repeat events.
+
+For this reason, modifier-based acceleration and deceleration are primarily
+intended for environments where the keyboard repeat behavior is compatible
+with them.
+
+rush does not attempt to emulate a physical key repeat at the Vim mapping
+level. It receives key events from |keyevent.nvim| and changes the motion
+amount accordingly.
+
+==============================================================================
+INSTALLATION						*rush-installation*
+
+Install rush with your preferred Neovim plugin manager.
+
+rush requires:
+
+- Neovim
+- |keyevent.nvim|
+
+After installation, call:
+
+>
+	require("rush").setup()
+<
+
+`keyevent.nvim` must also be available in Neovim's 'runtimepath'.
+
+==============================================================================
+LICENSE							*rush-license*
+
+rush is distributed under the MIT License.
+
+==============================================================================
+vim:tw=78:ts=8:sw=4:sts=4:et:ft=help:norl:
