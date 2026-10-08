@@ -1,5 +1,11 @@
 # rush.nvim
 
+[![CI](https://github.com/kibi2/rush.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/kibi2/rush.nvim/actions)
+[![codecov](https://codecov.io/gh/kibi2/rush.nvim/branch/main/graph/badge.svg)](https://codecov.io/gh/kibi2/rush.nvim)
+![GitHub release](https://img.shields.io/github/v/release/kibi2/rush.nvim)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Neovim](https://img.shields.io/badge/Neovim-0.10+-57A143?logo=neovim)
+
 **Control Vim motions with key repeats and holds.**
 
 `rush.nvim` changes the amount of motion based on how you repeat and hold a key.
