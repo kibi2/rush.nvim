@@ -29,7 +29,7 @@ local tan_click_ng1 = {
 	{ key = "j", interval = TAP }, -- tan
 	{ key = "j", interval = HOLD }, --- repeat 1
 	{ key = "j", interval = REPEAT }, -- repeat 2
-	{ key = "j", interval = TAP }, -- NG!
+	{ key = "j", interval = TAP }, -- repeat -> tap : NG!
 	{ key = "j", interval = REPEAT }, -- repeat 3
 	{ key = "j", interval = REPEAT }, -- repeat 4
 	{ key = "j", interval = REPEAT }, -- repeat 5

@@ -232,15 +232,16 @@ end
 local function process_normal(event)
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
 		check_share(event)
-		if event.ng_repeat ~= 0 then
+		if event.ng_repeat ~= 0 and event.nh >= 2 then
 			level = level - 1
-			event.nr = event.ng_repeat + 1
 		end
 		transition(STATE.REPEAT)
 		return
 	end
 	if 2 <= event.nt and event.nt <= 3 then
-		level = level + 1
+		if event.ng_repeat == 0 then
+			level = level + 1
+		end
 	else
 		level = 0
 		vim_count = 0
@@ -272,12 +273,6 @@ end
 
 ---@param event KeyEvent
 local function process_repeat(event)
-	if event.ng_repeat ~= 0 then
-		if event.ng_repeat == 1 then
-			level = level + 1
-		end
-		event.nr = event.ng_repeat + 1
-	end
 	if event.type == keyevent.KEY_EVENT_TYPE.REPEAT then
 		process_repeat_meta(event)
 		return
@@ -303,8 +298,9 @@ end
 --  |  | C | -> NORMAL | 0 |  |
 ---@param event KeyEvent
 local function process_event(event)
-	if event.ng_repeat ~= 0 then
+	if event.ng_repeat >= 3 then
 		event.type = keyevent.KEY_EVENT_TYPE.REPEAT
+		event.nr = event.ng_repeat
 	end
 	if state == STATE.INIT then
 		process_init()
