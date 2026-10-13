@@ -1,5 +1,5 @@
 local keyevent = require("keyevent.keyevent")
-local log = require("keyevent.log")
+local log = require("rush.log")
 
 local M = {}
 
@@ -143,7 +143,6 @@ local function remove_metakeymap(bufnr)
 			local ok, result =
 				pcall(vim.keymap.del, mode, motion, { buffer = bufnr })
 			if not ok then
-				log.error({ mode, motion, bufnr })
 				log.error(result)
 			end
 		end
