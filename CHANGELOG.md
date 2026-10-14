@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+* Move logging to optional `logger.nvim`; logging is disabled by default.
 * Changed deceleration to holding the opposite motion key. For example, holding `k` while holding `j` reduces the motion amount.
 * Consecutive taps now increase the motion amount up to 4×; a third consecutive tap resets the acceleration.
 
