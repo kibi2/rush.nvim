@@ -1,5 +1,9 @@
 local common_rush = require("common_rush")
 
+print("keyevent.get_events:", type(KeyEvent.get_events))
+local event = KeyEvent.keymap_event("a")
+print("keyevent.to_string:", KeyEvent.to_string and KeyEvent.to_string(event))
+
 ---@type KeyInfo[]
 local tan_tan_ta_ta_tann = {
 	{ key = "j", interval = CLICK }, -- tan
